@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User profile documents
+    match /users/{userId} {
+      // Any authenticated aspirant can view user cards to search study partners
+      allow read: if request.auth != null;
+      // Only the user themselves can create or update their own profile
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Daily tasks collection
+    match /tasks/{taskId} {
+      allow read: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Study goals collection
+    match /goals/{goalId} {
+      allow read: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Partner relationships & requests
+    match /partner_requests/{requestId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Active partnerships
+    match /partnerships/{partnershipId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

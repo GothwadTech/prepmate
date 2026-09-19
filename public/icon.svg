@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0494F4" />
+      <stop offset="100%" stop-color="#0277BD" />
+    </linearGradient>
+    <linearGradient id="flameGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF9800" />
+      <stop offset="100%" stop-color="#FFEB3B" />
+    </linearGradient>
+  </defs>
+  <!-- Background with smooth rounded squircle -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  
+  <!-- Outer target circle accent -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="24" stroke-dasharray="8 12" />
+  
+  <!-- Central Book Base (Preparation) -->
+  <path d="M128 350 C 180 330, 240 335, 256 360 C 272 335, 332 330, 384 350 L 384 210 C 332 190, 272 195, 256 220 C 240 195, 180 190, 128 210 Z" fill="#FFFFFF" fill-opacity="0.95" />
+  <path d="M256 220 L 256 360" stroke="#0494F4" stroke-width="8" stroke-linecap="round" />
+
+  <!-- Partnership / Victory Flame / Star Symbol on top -->
+  <circle cx="256" cy="148" r="44" fill="url(#flameGrad)" />
+  <path d="M256 120 C 265 135, 275 145, 275 158 C 275 168, 266 176, 256 176 C 246 176, 237 168, 237 158 C 237 145, 247 135, 256 120 Z" fill="#FFFFFF" />
+
+  <!-- Checkmark / Target Accents -->
+  <path d="M190 270 L 230 305 L 320 230" fill="none" stroke="#0494F4" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

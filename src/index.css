@@ -1,0 +1,1000 @@
+/* PrepMate Design System - Pure Plain CSS (No Frameworks)
+ * Designed by Gothwad Tech for NEET Aspirants
+ * Google Style Guidelines & Mobile-First UX
+ */
+
+:root {
+  /* Light Theme */
+  --primary: #0494F4;
+  --primary-hover: #0378C7;
+  --primary-active: #0260A0;
+  --primary-container: rgba(4, 148, 244, 0.12);
+  --primary-on-container: #004C87;
+  
+  --bg: #FFFFFF;
+  --surface: #F8F9FA;
+  --surface-variant: #F1F3F4;
+  --surface-elevated: #FFFFFF;
+  
+  --text-primary: #202124;
+  --text-secondary: #5F6368;
+  --text-tertiary: #80868B;
+  --text-on-primary: #FFFFFF;
+  
+  --border: #DADCE0;
+  --border-subtle: #E8EAED;
+  
+  /* Semantic Colors */
+  --success: #0F9D58;
+  --success-container: rgba(15, 157, 88, 0.12);
+  --warning: #F9AB00;
+  --warning-container: rgba(249, 171, 0, 0.12);
+  --danger: #EA4335;
+  --danger-container: rgba(234, 67, 53, 0.12);
+  --flame: #FF6D00;
+
+  /* Physics, Chemistry, Biology Subject Accents */
+  --subject-physics: #1A73E8;
+  --subject-physics-bg: rgba(26, 115, 232, 0.12);
+  --subject-chemistry: #E37400;
+  --subject-chemistry-bg: rgba(227, 116, 0, 0.12);
+  --subject-biology: #0F9D58;
+  --subject-biology-bg: rgba(15, 157, 88, 0.12);
+
+  /* Elevation Shadows (Material Design 3 style) */
+  --shadow-sm: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  --shadow-md: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+  --desktop-backdrop: #E8EAED;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+  
+  --font-family: -apple-system, BlinkMacSystemFont, "Google Sans", "Roboto", "Segoe UI", Helvetica, Arial, sans-serif;
+  --transition-fast: 0.18s ease;
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Theme (Google Style) */
+[data-theme="dark"] {
+  --primary: #0494F4;
+  --primary-hover: #38A9F7;
+  --primary-active: #66BEF9;
+  --primary-container: rgba(4, 148, 244, 0.22);
+  --primary-on-container: #CBE5FE;
+
+  --bg: #202124;
+  --surface: #303134;
+  --surface-variant: #3C4043;
+  --surface-elevated: #35373B;
+
+  --text-primary: #E8EAED;
+  --text-secondary: #9AA0A6;
+  --text-tertiary: #80868B;
+  --text-on-primary: #FFFFFF;
+
+  --border: #5F6368;
+  --border-subtle: #494C50;
+
+  --success: #81C995;
+  --success-container: rgba(129, 201, 149, 0.2);
+  --warning: #FDD663;
+  --warning-container: rgba(253, 214, 99, 0.2);
+  --danger: #F28B82;
+  --danger-container: rgba(242, 139, 130, 0.2);
+  --flame: #FF9E40;
+
+  --subject-physics: #8AB4F8;
+  --subject-physics-bg: rgba(138, 180, 248, 0.2);
+  --subject-chemistry: #FDB35A;
+  --subject-chemistry-bg: rgba(253, 179, 90, 0.2);
+  --subject-biology: #81C995;
+  --subject-biology-bg: rgba(129, 201, 149, 0.2);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 2px 6px 2px rgba(0, 0, 0, 0.45);
+  --desktop-backdrop: #121214;
+}
+
+/* Global Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--desktop-backdrop);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile-first App Shell (Max 480px, responsive & centered on desktop) */
+.app-viewport {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  background-color: var(--desktop-backdrop);
+}
+
+.app-container {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.12);
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+}
+
+/* Header Component (Gmail / Play Store Style) */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 58px;
+  background-color: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(4, 148, 244, 0.35);
+}
+
+.brand-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  padding: 16px;
+  padding-bottom: 96px; /* space for bottom nav */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+/* Bottom Navigation Bar (5 Tabs, Gmail/Play Store Style) */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: 64px;
+  background-color: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 4px 6px;
+  z-index: 60;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 2px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  gap: 2px;
+  transition: color var(--transition-fast);
+  user-select: none;
+}
+
+.nav-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.nav-item.active .nav-icon-wrap {
+  background-color: var(--primary-container);
+  color: var(--primary);
+}
+
+.nav-item.active {
+  color: var(--primary);
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+}
+
+.nav-item.active .nav-label {
+  font-weight: 700;
+}
+
+/* Common UI Components */
+/* 1. Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--text-on-primary);
+  box-shadow: 0 1px 3px rgba(4, 148, 244, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--surface-variant);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--border);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.btn-outline:hover {
+  background-color: var(--surface);
+  border-color: var(--text-secondary);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  border-color: var(--danger);
+  color: #FFFFFF;
+}
+
+.btn-danger:hover {
+  background-color: #D93025;
+}
+
+.btn-icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  background-color: transparent;
+  color: var(--text-primary);
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.btn-icon:hover {
+  background-color: var(--surface-variant);
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* 2. Cards */
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.card-clickable {
+  cursor: pointer;
+}
+
+.card-clickable:hover {
+  border-color: var(--primary);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.card-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 3. Badges / Chips */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  width: fit-content;
+  white-space: nowrap;
+}
+
+.badge-primary {
+  background-color: var(--primary-container);
+  color: var(--primary);
+}
+
+.badge-success {
+  background-color: var(--success-container);
+  color: var(--success);
+}
+
+.badge-warning {
+  background-color: var(--warning-container);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background-color: var(--danger-container);
+  color: var(--danger);
+}
+
+.badge-neutral {
+  background-color: var(--surface-variant);
+  color: var(--text-secondary);
+}
+
+.badge-physics {
+  background-color: var(--subject-physics-bg);
+  color: var(--subject-physics);
+}
+
+.badge-chemistry {
+  background-color: var(--subject-chemistry-bg);
+  color: var(--subject-chemistry);
+}
+
+.badge-biology {
+  background-color: var(--subject-biology-bg);
+  color: var(--subject-biology);
+}
+
+.badge-flame {
+  background-color: var(--flame-container);
+  color: var(--flame);
+}
+
+/* 4. Form Inputs */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.input-field {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-container);
+}
+
+.input-field::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* 5. Progress Bars */
+.progress-bar-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: var(--surface-variant);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: var(--radius-pill);
+  transition: width 0.4s ease;
+}
+
+.progress-fill-physics {
+  background-color: var(--subject-physics);
+}
+
+.progress-fill-chemistry {
+  background-color: var(--subject-chemistry);
+}
+
+.progress-fill-biology {
+  background-color: var(--subject-biology);
+}
+
+/* 6. Banner / Highlight Box */
+.banner-box {
+  background: linear-gradient(135deg, rgba(4, 148, 244, 0.12) 0%, rgba(4, 148, 244, 0.04) 100%);
+  border: 1px solid rgba(4, 148, 244, 0.25);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 7. Stat Tiles */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat-tile {
+  background-color: var(--surface-variant);
+  border-radius: var(--radius-sm);
+  padding: 10px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* 8. Tasks & Lists */
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  gap: 12px;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.task-checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  cursor: pointer;
+}
+
+.task-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.task-checkbox.checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+
+.task-text {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.task-text.completed {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+/* 9. Segmented Control / Filter Pills */
+.segment-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.segment-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.segment-btn {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.segment-btn.active {
+  background-color: var(--primary-container);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Modal / Sheet styling for Task Add etc. */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 480px;
+  background-color: var(--bg);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-drag-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background-color: var(--border);
+  align-self: center;
+  margin-bottom: -4px;
+}
+
+/* Phase 4 Dashboard Component Styles */
+.streak-showcase-box {
+  background: linear-gradient(135deg, rgba(255, 87, 34, 0.12) 0%, rgba(251, 188, 5, 0.08) 100%);
+  border: 1px solid rgba(255, 87, 34, 0.25);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.streak-days-track {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.streak-day-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.streak-day-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.streak-day-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-variant);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.streak-day-dot.completed {
+  background: var(--flame);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(255, 87, 34, 0.35);
+}
+
+.streak-day-dot.today {
+  border: 2px solid var(--primary);
+}
+
+.quote-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.priority-task-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-variant);
+  border: 1px solid var(--border);
+  gap: 10px;
+  transition: background-color var(--transition-fast);
+}
+
+.priority-task-tile:hover {
+  background: var(--border-light);
+}
+
+.priority-task-tile.completed {
+  opacity: 0.65;
+}
+
+/* Phase 5 Task Tracker Styles */
+.task-subject-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-subject-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px;
+}
+
+.task-actions-wrap {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.task-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.task-action-btn:hover {
+  background: var(--surface-variant);
+  color: var(--text-primary);
+}
+
+.task-action-btn.delete:hover {
+  background: var(--danger-container);
+  color: var(--danger);
+}
+
+.task-celebration-banner {
+  background: linear-gradient(135deg, rgba(52, 168, 83, 0.15) 0%, rgba(66, 133, 244, 0.12) 100%);
+  border: 1px solid rgba(52, 168, 83, 0.3);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.template-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all var(--transition-fast);
+}
+
+.template-chip:hover {
+  border-color: var(--primary);
+  background: var(--primary-container);
+}
+
+.date-preset-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.date-preset-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+
+/* Phase 6: Study Timer & Floating Bar */
+.floating-mini-timer {
+  position: fixed;
+  bottom: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 448px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 950;
+  cursor: pointer;
+  animation: slideUp 0.25s ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.floating-mini-timer:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.focus-mode-overlay {
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(10px);
+}
+
+.focus-mode-sheet {
+  background: var(--background) !important;
+  max-width: 520px !important;
+  width: 100% !important;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5) !important;
+  animation: fadeIn 0.3s ease !important;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Phase 7: Goals System Styles */
+.goal-card {
+  position: relative;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.goal-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.goal-card.completed {
+  opacity: 0.88;
+  background-color: var(--surface-variant);
+}
+
+.goal-progress-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.goal-progress-btn:hover {
+  background: var(--primary-container);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.goal-template-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.goal-template-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+
+
