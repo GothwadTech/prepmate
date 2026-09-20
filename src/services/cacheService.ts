@@ -1,5 +1,5 @@
 /**
- * PrepMate - Cache Layer Service
+ * Prepmate - Cache Layer Service
  * Free-Tier Optimization: Caches tasks, goals, and daily logs locally
  * to stay well within Firebase Spark free tier limits (50,000 reads/day).
  */

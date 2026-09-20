@@ -1,7 +1,7 @@
 import { LeaderboardEntry, LeaderboardFilter, ScoreBreakdown, UserStats, DailyStudyLog, PartnerProfile } from '../types';
 
 /**
- * PrepMate NEET Preparation Score Calculation Formula
+ * Prepmate NEET Preparation Score Calculation Formula
  * Total Max: 100 points
  * - Weekly Study Hours: 45% weight (target: 38 hrs/week)
  * - Tasks & MCQs Done: 35% weight (target: 28 tasks/week)

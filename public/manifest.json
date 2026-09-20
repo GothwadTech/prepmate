@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "PrepMate - Daily Goal & Activity Tracker",
-  "short_name": "PrepMate",
+  "name": "Prepmate - Daily Goal & Activity Tracker",
+  "short_name": "Prepmate",
   "description": "Daily study goal and activity tracker for NEET preparation by Gothwad Tech with partner accountability.",
   "start_url": "/",
   "scope": "/",

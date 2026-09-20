@@ -1,5 +1,5 @@
 /**
- * PrepMate - Offline Mutation Queue
+ * Prepmate - Offline Mutation Queue
  * Stores mutations locally when user is offline or Firebase is not configured,
  * ensuring zero data loss and seamless sync upon reconnection.
  */

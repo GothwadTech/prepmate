@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('PrepMate Uncaught Error:', error, errorInfo);
+    console.error('Prepmate Uncaught Error:', error, errorInfo);
   }
 
   private handleReset = () => {

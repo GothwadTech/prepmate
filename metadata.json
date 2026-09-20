@@ -1,5 +1,5 @@
 {
-  "name": "PrepMate",
+  "name": "Prepmate",
   "description": "Daily study goal and activity tracker for preparation with partner accountability by Gothwad Tech.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

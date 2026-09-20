@@ -1,5 +1,5 @@
 /**
- * PrepMate - Core TypeScript Definitions
+ * Prepmate - Core TypeScript Definitions
  * Project by Gothwad Tech for NEET Aspirants
  */
 

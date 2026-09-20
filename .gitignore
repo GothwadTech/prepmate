@@ -1,6 +1,9 @@
 node_modules/
 build/
 dist/
+dev-dist/
+bun.lock
+.wrangler/
 coverage/
 .DS_Store
 *.log

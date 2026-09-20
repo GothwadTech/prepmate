@@ -35,7 +35,7 @@ interface HomePageProps {
 const NEET_QUOTES = [
   {
     quote: 'Doctor banna koi aam baat nahi, har din ka ek-ek ghanta MBBS seat tak le jaata hai.',
-    author: 'PrepMate Aspirant Wisdom',
+    author: 'Prepmate Aspirant Wisdom',
     tag: 'Dedication',
   },
   {

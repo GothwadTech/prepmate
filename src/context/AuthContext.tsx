@@ -9,10 +9,10 @@ interface AuthContextType {
   loading: boolean;
   isFirebaseConfigured: boolean;
   signIn: (email: string, pass: string) => Promise<void>;
-  signUp: (data: SignUpData) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signUp: (data: SignUpData) => Promise<UserProfile>;
   logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  resetPassword: (identifier: string) => Promise<{ email: string }>;
+  resendVerification: (email: string, password?: string) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   toasts: ToastNotification[];
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
@@ -44,6 +44,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isFirebaseConfigured && auth) {
       const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
+          // If email is not verified, do not allow entry into the app
+          if (!firebaseUser.emailVerified) {
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+
           try {
             const profile = await authService.getUserProfile(firebaseUser.uid);
             if (profile) {
@@ -90,45 +97,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(profile);
       showToast(`Welcome back, ${profile.displayName}!`, 'success');
     } catch (error: any) {
-      let msg = error.message || 'Login failed. Please check your credentials.';
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        msg = 'Invalid email or password. Please try again.';
-      } else if (error.code === 'auth/invalid-email') {
-        msg = 'Please enter a valid email address.';
-      }
-      showToast(msg, 'error');
       throw error;
     }
   };
 
-  const signUp = async (data: SignUpData) => {
+  const signUp = async (data: SignUpData): Promise<UserProfile> => {
     try {
       const profile = await authService.signUp(data);
-      setUser(profile);
-      showToast('Account created successfully! Welcome to PrepMate.', 'success');
+      return profile;
     } catch (error: any) {
-      let msg = error.message || 'Signup failed. Please try again.';
-      if (error.code === 'auth/email-already-in-use') {
-        msg = 'This email is already registered. Please log in.';
-      } else if (error.code === 'auth/weak-password') {
-        msg = 'Password should be at least 6 characters.';
-      }
-      showToast(msg, 'error');
-      throw error;
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      const profile = await authService.loginWithGoogle();
-      setUser(profile);
-      showToast(`Signed in as ${profile.displayName}`, 'success');
-    } catch (error: any) {
-      let msg = error.message || 'Google sign in failed.';
-      if (error.code === 'auth/popup-closed-by-user') {
-        msg = 'Google sign in was cancelled.';
-      }
-      showToast(msg, 'error');
       throw error;
     }
   };
@@ -143,16 +120,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (identifier: string): Promise<{ email: string }> => {
     try {
-      await authService.sendPasswordReset(email);
-      showToast(`Password reset link sent to ${email}`, 'success');
+      const result = await authService.sendPasswordReset(identifier);
+      return result;
     } catch (error: any) {
-      let msg = error.message || 'Failed to send reset link.';
-      if (error.code === 'auth/user-not-found') {
-        msg = 'No account found with this email.';
-      }
-      showToast(msg, 'error');
+      throw error;
+    }
+  };
+
+  const resendVerification = async (email: string, password?: string) => {
+    try {
+      await authService.resendVerificationEmail(email, password);
+    } catch (error: any) {
       throw error;
     }
   };
@@ -176,9 +156,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isFirebaseConfigured,
         signIn,
         signUp,
-        signInWithGoogle,
         logout,
         resetPassword,
+        resendVerification,
         updateProfile,
         toasts,
         showToast,

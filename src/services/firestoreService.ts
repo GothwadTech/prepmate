@@ -1,5 +1,5 @@
 /**
- * PrepMate - Firestore CRUD Service
+ * Prepmate - Firestore CRUD Service
  * Handles direct Firestore interactions for Tasks, Goals, and Daily Logs.
  * Optimized for Firebase Spark Free Tier.
  */

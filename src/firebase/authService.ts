@@ -1,14 +1,14 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db, googleProvider, isFirebaseConfigured } from './config';
+import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db, isFirebaseConfigured } from './config';
 import { UserProfile } from '../types';
 
 export interface SignUpData {
@@ -20,141 +20,209 @@ export interface SignUpData {
   targetScore: number;
 }
 
-const LOCAL_STORAGE_USER_KEY = 'prepmate_auth_user_demo';
+const LOCAL_STORAGE_USER_KEY = 'prepmate_auth_user_active';
+
+/**
+ * Clean data so undefined properties are never passed to Firestore setDoc/updateDoc
+ */
+function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
+  const clean: any = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) {
+      clean[k] = v;
+    }
+  }
+  return clean;
+}
 
 export const authService = {
+  /**
+   * Search for an existing user in Firestore by email or username
+   */
+  async findUserByIdentifier(identifier: string): Promise<UserProfile | null> {
+    if (!isFirebaseConfigured || !db) return null;
+    const clean = identifier.trim();
+    if (!clean) return null;
+
+    try {
+      const usersRef = collection(db, 'users');
+      const isEmail = clean.includes('@');
+
+      if (isEmail) {
+        const cleanEmail = clean.toLowerCase();
+        const qEmail = query(usersRef, where('email', '==', cleanEmail));
+        const snapEmail = await getDocs(qEmail);
+        if (!snapEmail.empty) {
+          return snapEmail.docs[0].data() as UserProfile;
+        }
+
+        // Check exact match fallback
+        if (clean !== cleanEmail) {
+          const qExact = query(usersRef, where('email', '==', clean));
+          const snapExact = await getDocs(qExact);
+          if (!snapExact.empty) {
+            return snapExact.docs[0].data() as UserProfile;
+          }
+        }
+        return null;
+      } else {
+        const cleanUsername = clean.replace(/^@/, '').toLowerCase();
+        const qUser = query(usersRef, where('username', '==', cleanUsername));
+        const snapUser = await getDocs(qUser);
+        if (!snapUser.empty) {
+          return snapUser.docs[0].data() as UserProfile;
+        }
+        return null;
+      }
+    } catch (err) {
+      console.warn('Error querying Firestore for user identifier:', err);
+      return null;
+    }
+  },
+
+  /**
+   * Resolve an identifier (email, username, or phone) to the user's registered email
+   */
+  async resolveIdentifierToEmail(identifier: string): Promise<string> {
+    const cleanId = identifier.trim();
+    if (!cleanId.includes('@')) {
+      const user = await this.findUserByIdentifier(cleanId);
+      if (user?.email) {
+        return user.email;
+      }
+    }
+    return cleanId;
+  },
+
   /**
    * Register with Email and Password
    */
   async signUp(data: SignUpData): Promise<UserProfile> {
     const cleanUsername = data.username.trim().replace(/^@/, '').toLowerCase();
+    const cleanEmail = data.email.trim().toLowerCase();
 
     if (!isFirebaseConfigured || !auth || !db) {
-      // Demo Mode fallback when keys not yet added
-      const demoProfile: UserProfile = {
-        uid: `demo-user-${Date.now()}`,
-        email: data.email,
-        displayName: data.name,
-        username: cleanUsername,
-        targetYear: data.targetYear || '2026',
-        targetScore: Number(data.targetScore) || 680,
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(demoProfile));
-      return demoProfile;
+      throw new Error('Firebase credentials not configured yet. Please provide Firebase keys in settings.');
+    }
+
+    // Verify username availability before creating account
+    const existingWithUsername = await this.findUserByIdentifier(cleanUsername);
+    if (existingWithUsername) {
+      const err: any = new Error('This username is already taken. Please choose another username.');
+      err.code = 'auth/username-already-in-use';
+      throw err;
     }
 
     // 1. Create Firebase Auth user
-    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+    const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, data.password);
     const user = userCredential.user;
 
     // 2. Update display name in Firebase Auth
     await updateProfile(user, {
-      displayName: data.name,
+      displayName: data.name.trim(),
     });
 
-    // 3. Create profile document in Firestore
-    const userProfile: UserProfile = {
+    // 3. Send email verification link
+    try {
+      await sendEmailVerification(user);
+    } catch (verifErr) {
+      console.warn('Could not trigger verification email:', verifErr);
+    }
+
+    // 4. Create profile document in Firestore (strictly sanitizing undefined values)
+    const rawProfile: UserProfile = {
       uid: user.uid,
-      email: data.email,
-      displayName: data.name,
+      email: cleanEmail,
+      displayName: data.name.trim(),
       username: cleanUsername,
       targetYear: data.targetYear || '2026',
       targetScore: Number(data.targetScore) || 680,
       createdAt: new Date().toISOString(),
-      photoURL: user.photoURL || undefined,
+      photoURL: user.photoURL || '',
     };
 
+    const userProfile = sanitizeForFirestore(rawProfile);
     const userRef = doc(db, 'users', user.uid);
     await setDoc(userRef, userProfile);
+
+    // Sign out unverified user so they must verify their email before accessing app
+    await signOut(auth);
 
     return userProfile;
   },
 
   /**
-   * Login with Email and Password
+   * Resend verification email
    */
-  async login(email: string, password: string): Promise<UserProfile> {
+  async resendVerificationEmail(email: string, password?: string): Promise<void> {
+    if (!isFirebaseConfigured || !auth) {
+      throw new Error('Authentication service unavailable.');
+    }
+    if (auth.currentUser && auth.currentUser.email === email) {
+      await sendEmailVerification(auth.currentUser);
+      return;
+    }
+    if (password) {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(cred.user);
+      await signOut(auth);
+      return;
+    }
+    throw new Error('Please login to resend verification link.');
+  },
+
+  /**
+   * Login with Identifier (Email or Username) and Password
+   */
+  async login(identifier: string, password: string): Promise<UserProfile> {
     if (!isFirebaseConfigured || !auth || !db) {
-      // Check for saved demo user or create default
-      const saved = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-      const demoProfile: UserProfile = {
-        uid: 'demo-aspirant-1',
-        email,
-        displayName: 'NEET Aspirant',
-        username: 'neet_aspirant26',
-        targetYear: '2026',
-        targetScore: 680,
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(demoProfile));
-      return demoProfile;
+      throw new Error('Firebase credentials not configured yet. Please provide Firebase keys in settings.');
     }
 
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const clean = identifier.trim();
+    let emailToUse = clean;
+
+    // If identifier is username, resolve and verify existence in database first
+    if (!clean.includes('@')) {
+      const user = await this.findUserByIdentifier(clean);
+      if (!user || !user.email) {
+        const err: any = new Error('Incorrect email/username or password');
+        err.code = 'auth/invalid-credential';
+        throw err;
+      }
+      emailToUse = user.email;
+    }
+
+    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, password);
+
+    // Enforce email verification
+    if (!userCredential.user.emailVerified) {
+      await signOut(auth);
+      const err: any = new Error('Email not verified. Please verify your email.');
+      err.code = 'auth/email-not-verified';
+      err.email = emailToUse;
+      throw err;
+    }
+
     const profile = await this.getUserProfile(userCredential.user.uid);
-    if (profile) return profile;
+    if (profile) {
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(profile));
+      return profile;
+    }
 
     // Fallback if Firestore doc wasn't created yet
-    return {
+    const fallbackProfile: UserProfile = sanitizeForFirestore({
       uid: userCredential.user.uid,
-      email: userCredential.user.email || email,
+      email: userCredential.user.email || emailToUse,
       displayName: userCredential.user.displayName || 'NEET Aspirant',
       username: (userCredential.user.email || 'user').split('@')[0],
       targetYear: '2026',
       targetScore: 680,
       createdAt: new Date().toISOString(),
-    };
-  },
-
-  /**
-   * Google One-Click Sign In
-   */
-  async loginWithGoogle(): Promise<UserProfile> {
-    if (!isFirebaseConfigured || !auth || !db || !googleProvider) {
-      const demoProfile: UserProfile = {
-        uid: 'google-demo-user',
-        email: 'aspirant@gmail.com',
-        displayName: 'Google Aspirant',
-        username: 'google_aspirant',
-        targetYear: '2026',
-        targetScore: 690,
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(demoProfile));
-      return demoProfile;
-    }
-
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-
-    // Check if doc exists
-    let profile = await this.getUserProfile(user.uid);
-    if (!profile) {
-      const generatedUsername = (user.displayName || 'aspirant')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '_')
-        .slice(0, 15);
-
-      profile = {
-        uid: user.uid,
-        email: user.email || '',
-        displayName: user.displayName || 'NEET Aspirant',
-        username: generatedUsername,
-        targetYear: '2026',
-        targetScore: 680,
-        createdAt: new Date().toISOString(),
-        photoURL: user.photoURL || undefined,
-      };
-
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, profile);
-    }
-
-    return profile;
+      photoURL: userCredential.user.photoURL || '',
+    });
+    localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(fallbackProfile));
+    return fallbackProfile;
   },
 
   /**
@@ -168,14 +236,33 @@ export const authService = {
   },
 
   /**
-   * Send Password Reset Email
+   * Send Password Reset Email with verified existence check
    */
-  async sendPasswordReset(email: string): Promise<void> {
-    if (!isFirebaseConfigured || !auth) {
-      // Demo simulated success
-      return;
+  async sendPasswordReset(identifier: string): Promise<{ email: string }> {
+    if (!isFirebaseConfigured || !auth || !db) {
+      throw new Error('Firebase credentials not configured yet.');
     }
-    await sendPasswordResetEmail(auth, email);
+    const clean = identifier.trim();
+    if (!clean) {
+      throw new Error('Please enter your registered email or username.');
+    }
+
+    const isEmail = clean.includes('@');
+
+    // Strictly verify whether this email or username actually exists in our database!
+    const existingUser = await this.findUserByIdentifier(clean);
+    if (!existingUser || !existingUser.email) {
+      const err: any = new Error(
+        isEmail
+          ? 'No account found with this email address.'
+          : 'No account found with this username.'
+      );
+      err.code = 'auth/user-not-found';
+      throw err;
+    }
+
+    await sendPasswordResetEmail(auth, existingUser.email);
+    return { email: existingUser.email };
   },
 
   /**
@@ -215,6 +302,6 @@ export const authService = {
     }
 
     const userRef = doc(db, 'users', uid);
-    await setDoc(userRef, updates, { merge: true });
+    await setDoc(userRef, sanitizeForFirestore(updates as any), { merge: true });
   },
 };

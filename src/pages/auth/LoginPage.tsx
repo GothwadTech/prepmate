@@ -1,416 +1,449 @@
 import React, { useState } from 'react';
-import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
-import {
-  GoogleIcon,
-  EyeIcon,
-  EyeOffIcon,
-  SunIcon,
-  MoonIcon,
-  BookIcon,
-  MailIcon,
-  LockIcon,
-  FlameIcon,
-  TrophyIcon,
-  ShieldIcon,
-  CheckCircle2Icon,
-  SparklesIcon,
-} from '../../components/icons/SvgIcons';
+import { motion, AnimatePresence } from 'motion/react';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { AppTheme } from '../../types';
 
 interface LoginPageProps {
   onNavigateToSignup: () => void;
-  theme: AppTheme;
-  onToggleTheme: () => void;
+  onNavigateToVerification?: (email: string, password?: string) => void;
+  prefilledIdentifier?: string;
+  prefilledPassword?: string;
+  theme?: AppTheme;
+  onToggleTheme?: () => void;
 }
+
+const formatAuthError = (err: any): string => {
+  if (!err) return 'Login failed. Please check your credentials.';
+  const code = String(err.code || '').toLowerCase();
+  const raw = String(err.message || '').toLowerCase();
+
+  // Short email verification required message
+  if (
+    code.includes('email-not-verified') ||
+    raw.includes('email not verified') ||
+    raw.includes('not verified')
+  ) {
+    return 'Email not verified. Please verify your email.';
+  }
+
+  // Strictly NO "Please try again" for incorrect email/username/password
+  if (
+    code.includes('invalid-credential') ||
+    code.includes('wrong-password') ||
+    code.includes('user-not-found') ||
+    raw.includes('invalid-credential') ||
+    raw.includes('wrong-password') ||
+    raw.includes('user-not-found') ||
+    raw.includes('invalid credential')
+  ) {
+    return 'Incorrect email/username or password';
+  }
+
+  if (code.includes('invalid-email') || raw.includes('invalid-email') || raw.includes('badly formatted')) {
+    return 'Please enter a valid email address.';
+  }
+
+  if (code.includes('too-many-requests') || raw.includes('too-many-requests')) {
+    return 'Too many failed attempts. Please wait a few minutes and try again.';
+  }
+
+  if (code.includes('network-request-failed') || raw.includes('network') || raw.includes('offline')) {
+    return 'Internet connection error. Please check your network.';
+  }
+
+  if (code.includes('user-disabled') || raw.includes('user-disabled')) {
+    return 'This account has been deactivated. Please contact support.';
+  }
+
+  if (raw.includes('firebase') || raw.includes('credential') || raw.includes('api key')) {
+    return 'Incorrect email/username or password';
+  }
+
+  if (raw.includes('auth/') || raw.includes('error (')) {
+    return 'Incorrect email/username or password';
+  }
+
+  return err.message || 'Login failed. Please check your credentials.';
+};
+
+const formatResetError = (err: any): string => {
+  if (!err) return 'Unable to send reset link.';
+  const code = String(err.code || '').toLowerCase();
+  const raw = String(err.message || '').toLowerCase();
+
+  if (
+    code.includes('user-not-found') ||
+    raw.includes('user-not-found') ||
+    raw.includes('no account found')
+  ) {
+    return err.message || 'No account found with this email or username.';
+  }
+  if (code.includes('invalid-email') || raw.includes('invalid-email')) {
+    return 'Please enter a valid email or username.';
+  }
+  if (code.includes('network-request-failed') || raw.includes('network')) {
+    return 'Internet connection error. Please check your network.';
+  }
+  if (raw.includes('firebase')) {
+    return 'Unable to process request right now. Please try again.';
+  }
+  return err.message || 'Failed to send reset link. Please check and try again.';
+};
 
 export const LoginPage: React.FC<LoginPageProps> = ({
   onNavigateToSignup,
-  theme,
-  onToggleTheme,
+  onNavigateToVerification,
+  prefilledIdentifier = '',
+  prefilledPassword = '',
 }) => {
-  const { signIn, signInWithGoogle, isFirebaseConfigured } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { signIn, resetPassword } = useAuth();
+  const [identifier, setIdentifier] = useState(prefilledIdentifier);
+  const [password, setPassword] = useState(prefilledPassword);
   const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [resetSentToEmail, setResetSentToEmail] = useState('');
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  // Sync prefilled credentials if props update
+  React.useEffect(() => {
+    if (prefilledIdentifier) setIdentifier(prefilledIdentifier);
+    if (prefilledPassword) setPassword(prefilledPassword);
+  }, [prefilledIdentifier, prefilledPassword]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    if (!identifier.trim() || password.length < 6) return;
+    setLoading(true);
+    setError('');
 
-    setSubmitting(true);
     try {
-      await signIn(email.trim(), password);
-    } catch {
-      // Handled by Toast in AuthContext
+      await signIn(identifier.trim(), password);
+    } catch (err: any) {
+      setError(formatAuthError(err));
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setSubmitting(true);
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!identifier.trim()) return;
+    setLoading(true);
+    setError('');
+    setSuccess(false);
+    setResetSentToEmail('');
+
     try {
-      await signInWithGoogle();
-    } catch {
-      // Handled by Toast
+      const res = await resetPassword(identifier.trim());
+      if (res?.email) {
+        setResetSentToEmail(res.email);
+      }
+      setSuccess(true);
+    } catch (err: any) {
+      setError(formatResetError(err));
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const handleQuickDemoLogin = async () => {
-    setSubmitting(true);
-    try {
-      await signIn('aspirant@neet2026.com', 'password123');
-    } catch {
-      //
-    } finally {
-      setSubmitting(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    if (isForgotPassword) {
+      handleResetPassword(e);
+    } else {
+      handleLogin(e);
     }
   };
 
   return (
     <div
-      id="login-page"
       style={{
-        display: 'flex',
-        flexDirection: 'column',
+        width: '100%',
         minHeight: '100vh',
         backgroundColor: 'var(--bg)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         position: 'relative',
-        overflowX: 'hidden',
+        fontFamily: 'var(--font-family)',
+        color: 'var(--text-primary)',
+        boxSizing: 'border-box',
       }}
     >
-      {/* 1. Curved Hero Banner */}
       <div
         style={{
-          background: 'linear-gradient(145deg, #0494F4 0%, #0277BD 100%)',
-          borderBottomLeftRadius: '28px',
-          borderBottomRightRadius: '28px',
-          padding: '24px 20px 32px 20px',
-          color: '#FFFFFF',
-          position: 'relative',
-          boxShadow: '0 8px 24px rgba(4, 148, 244, 0.22)',
+          width: '100%',
+          maxWidth: '440px',
+          padding: '32px 20px 48px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          boxSizing: 'border-box',
+          margin: '0 auto',
         }}
-        id="login-hero-banner"
       >
-        {/* Top Header Row with Logo & Theme Toggle */}
+        {/* Header Card */}
         <div
           style={{
+            width: '100%',
+            backgroundColor: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '20px',
+            padding: '24px 20px',
+            textAlign: 'center',
             display: 'flex',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
             marginBottom: '20px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            boxSizing: 'border-box',
           }}
         >
-          {/* Logo Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(8px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid rgba(255, 255, 255, 0.35)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-              }}
-            >
-              <BookIcon size={22} color="#FFFFFF" />
-            </div>
-            <div>
-              <span
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 900,
-                  color: '#FFFFFF',
-                  letterSpacing: '-0.4px',
-                  lineHeight: 1,
-                  display: 'block',
-                }}
-              >
-                PrepMate
-              </span>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  letterSpacing: '0.4px',
-                }}
-              >
-                NEET UG Prep Partner
-              </span>
-            </div>
-          </div>
-
-          {/* Theme Toggle Pill */}
-          <button
-            type="button"
-            onClick={onToggleTheme}
+          <div
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              color: '#FFFFFF',
+              width: '64px',
+              height: '64px',
+              backgroundColor: 'var(--bg)',
+              borderRadius: '16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            title="Toggle Light/Dark Theme"
-            aria-label="Toggle theme"
-            id="auth-theme-toggle-btn"
-          >
-            {theme === 'light' ? <MoonIcon size={17} color="#FFFFFF" /> : <SunIcon size={17} color="#FFFFFF" />}
-          </button>
-        </div>
-
-        {/* Motivational Headline & NEET Target Pill */}
-        <div style={{ marginTop: '8px' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-pill)',
-              backgroundColor: 'rgba(255, 255, 255, 0.18)',
-              border: '1px solid rgba(255, 255, 255, 0.28)',
-              fontSize: '11px',
-              fontWeight: 700,
-              color: '#FFFFFF',
-              marginBottom: '10px',
+              border: '1px solid var(--border)',
+              overflow: 'hidden',
+              marginBottom: '12px',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.08)',
             }}
           >
-            <FlameIcon size={13} color="#FFE082" />
-            <span>Target: NEET 2026 • 680+ Score</span>
+            <img
+              src="/icon-512-maskable.png"
+              alt="Prepmate Logo"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transform: 'scale(1.08)',
+              }}
+              referrerPolicy="no-referrer"
+            />
           </div>
 
           <h1
             style={{
-              fontSize: '22px',
-              fontWeight: 800,
-              lineHeight: 1.25,
-              margin: '0 0 6px 0',
-              letterSpacing: '-0.3px',
-              color: '#FFFFFF',
+              fontSize: '26px',
+              fontWeight: 900,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.5px',
+              margin: '0 0 4px 0',
+              lineHeight: 1.2,
             }}
           >
-            Welcome Back, Future Doctor!
+            Prepmate
           </h1>
+
           <p
             style={{
-              fontSize: '13px',
-              color: 'rgba(255, 255, 255, 0.88)',
-              margin: 0,
+              fontSize: '12.5px',
+              color: 'var(--text-secondary)',
               lineHeight: 1.45,
+              maxWidth: '280px',
+              margin: 0,
+              fontWeight: 500,
+              opacity: 0.85,
             }}
           >
-            Log in to continue your daily question streak, syllabus checklist, and partner study challenge.
+            {isForgotPassword
+              ? 'Reset password to access your account securely.'
+              : 'Your dedicated NEET UG study partner and daily progress tracker.'}
           </p>
         </div>
 
-        {/* NEET Metric Badges Row */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '8px',
-            marginTop: '16px',
-          }}
-        >
+        {/* Auth Switcher Tabs */}
+        {!isForgotPassword && (
           <div
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '8px 10px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF', display: 'block' }}>720</span>
-            <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 600 }}>Daily Targets</span>
-          </div>
-          <div
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '8px 10px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF', display: 'block' }}>🔥 100%</span>
-            <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 600 }}>Streak Shield</span>
-          </div>
-          <div
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '8px 10px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF', display: 'block' }}>⚔️ VS</span>
-            <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 600 }}>Partner Sync</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Main Login Form Container */}
-      <div
-        style={{
-          flex: 1,
-          padding: '0 16px 24px 16px',
-          marginTop: '-16px',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-start',
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: 'var(--surface)',
-            borderRadius: '24px',
-            border: '1px solid var(--border)',
-            padding: '24px 18px',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
-          }}
-          id="login-form-container"
-        >
-          {/* Form Title & Subtitle */}
-          <div style={{ marginBottom: '18px' }}>
-            <h2
-              style={{
-                fontSize: '18px',
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                margin: '0 0 4px 0',
-              }}
-            >
-              Sign In to Your Account
-            </h2>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0 }}>
-              Enter your credentials or use fast one-tap login below
-            </p>
-          </div>
-
-          {/* Google Sign-in Button */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={submitting}
-            id="google-signin-btn"
             style={{
               width: '100%',
-              height: '46px',
-              borderRadius: 'var(--radius-pill)',
+              display: 'flex',
+              gap: '8px',
+              marginBottom: '20px',
+              padding: '4px',
+              backgroundColor: 'var(--surface-variant)',
+              borderRadius: '14px',
               border: '1px solid var(--border)',
-              backgroundColor: 'var(--surface)',
-              color: 'var(--text-primary)',
-              fontSize: '13.5px',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              boxSizing: 'border-box',
             }}
           >
-            <GoogleIcon size={19} />
-            <span>Continue with Google</span>
-          </button>
-
-          {/* Divider */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              margin: '18px 0 16px 0',
-            }}
-          >
-            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-            <span
+            <button
+              type="button"
               style={{
-                fontSize: '11px',
-                color: 'var(--text-tertiary)',
-                fontWeight: 700,
-                letterSpacing: '0.6px',
+                flex: 1,
+                padding: '10px 0',
+                fontSize: '12px',
+                fontWeight: 800,
                 textTransform: 'uppercase',
+                letterSpacing: '0.8px',
+                borderRadius: '10px',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: 'var(--primary)',
+                color: '#FFFFFF',
+                boxShadow: '0 2px 8px rgba(4, 148, 244, 0.28)',
+                transition: 'all 0.2s ease',
               }}
             >
-              or sign in with email
-            </span>
-            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={onNavigateToSignup}
+              style={{
+                flex: 1,
+                padding: '10px 0',
+                fontSize: '12px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.8px',
+                borderRadius: '10px',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: 'transparent',
+                color: 'var(--text-secondary)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+        )}
+
+        {/* Main Form */}
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* Identifier Input */}
+          <div style={{ position: 'relative', width: '100%' }}>
+            <div
+              style={{
+                position: 'absolute',
+                left: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-tertiary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+              }}
+            >
+              <Mail size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Email or Username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '14px 16px 14px 46px',
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '14px',
+                fontSize: '14px',
+                color: 'var(--text-primary)',
+                outline: 'none',
+                boxSizing: 'border-box',
+                fontFamily: 'inherit',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--primary)';
+                e.target.style.boxShadow = '0 0 0 3px var(--primary-container)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--border)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
           </div>
 
-          {/* Email & Password Form */}
-          <form
-            onSubmit={handleEmailLogin}
-            style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
-          >
-            {/* Email Field with Left Mail Icon */}
-            <Input
-              label="Aspirant Email"
-              type="email"
-              placeholder="e.g. aspirant@neet2026.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              id="login-email-input"
-              leftIcon={<MailIcon size={16} />}
-            />
-
-            {/* Password Field with Left Lock Icon & Right Show/Hide */}
-            <div>
-              <div style={{ position: 'relative' }}>
-                <Input
-                  label="Password"
+          {/* Password Input (only if not forgot-password) */}
+          {!isForgotPassword && (
+            <>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-tertiary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <Lock size={18} />
+                </div>
+                <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your account password"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  id="login-password-input"
-                  leftIcon={<LockIcon size={16} />}
+                  style={{
+                    width: '100%',
+                    padding: '14px 46px 14px 46px',
+                    backgroundColor: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '14px',
+                    fontSize: '14px',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    fontFamily: 'inherit',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = 'var(--primary)';
+                    e.target.style.boxShadow = '0 0 0 3px var(--primary-container)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'none';
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
                     position: 'absolute',
-                    right: '12px',
-                    bottom: '10px',
+                    right: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
                     background: 'transparent',
                     border: 'none',
-                    color: 'var(--text-tertiary)',
+                    color: 'var(--text-secondary)',
                     cursor: 'pointer',
-                    padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    padding: '4px',
                   }}
-                  aria-label="Toggle password visibility"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
 
@@ -418,203 +451,280 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <div
                 style={{
                   display: 'flex',
-                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginTop: '8px',
+                  justifyContent: 'space-between',
+                  padding: '2px 4px',
                 }}
               >
-                <label
+                <div
+                  onClick={() => setRememberMe(!rememberMe)}
                   style={{
-                    display: 'inline-flex',
+                    display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '12px',
-                    color: 'var(--text-secondary)',
+                    gap: '8px',
                     cursor: 'pointer',
                     userSelect: 'none',
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
+                  <div
                     style={{
-                      width: '15px',
-                      height: '15px',
-                      accentColor: 'var(--primary)',
-                      cursor: 'pointer',
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '5px',
+                      border: rememberMe
+                        ? '1px solid var(--primary)'
+                        : '1px solid var(--border)',
+                      backgroundColor: rememberMe ? 'var(--primary)' : 'var(--surface)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.18s ease',
+                      boxShadow: rememberMe ? '0 1px 4px rgba(4, 148, 244, 0.3)' : 'none',
                     }}
-                  />
-                  <span>Remember me</span>
-                </label>
+                  >
+                    {rememberMe && (
+                      <svg
+                        style={{ width: '12px', height: '12px', color: '#FFFFFF' }}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="3.5"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    )}
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    Remember me
+                  </span>
+                </div>
 
                 <button
                   type="button"
-                  onClick={() => setIsForgotModalOpen(true)}
+                  onClick={() => {
+                    setIsForgotPassword(true);
+                    setSuccess(false);
+                    setError('');
+                  }}
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: 'var(--primary)',
                     fontSize: '12px',
                     fontWeight: 700,
+                    color: 'var(--primary)',
                     cursor: 'pointer',
                     padding: '2px 0',
                   }}
-                  id="forgot-password-link"
                 >
-                  Forgot password?
+                  Forgot Password?
                 </button>
               </div>
-            </div>
+            </>
+          )}
 
-            {/* Primary Sign In Button */}
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              isFullWidth
-              disabled={submitting}
-              id="login-submit-btn"
-              style={{
-                height: '46px',
-                fontWeight: 800,
-                fontSize: '14.5px',
-                marginTop: '4px',
-                borderRadius: 'var(--radius-pill)',
-                boxShadow: '0 4px 14px rgba(4, 148, 244, 0.35)',
-              }}
-            >
-              {submitting ? 'Authenticating...' : 'Sign In'}
-            </Button>
-          </form>
-
-          {/* Quick 1-Click Demo Login Box */}
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '12px',
-              borderRadius: '16px',
-              backgroundColor: 'var(--surface-variant)',
-              border: '1px dashed var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <SparklesIcon size={15} color="var(--primary)" />
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Quick Aspirant Test Login
-                </span>
-              </div>
-              <span
+          {/* Status & Error Feedback (Placed directly below password / options row, before login button) */}
+          <AnimatePresence>
+            {success && isForgotPassword && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
                 style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  backgroundColor: 'var(--primary-container)',
-                  color: 'var(--primary)',
-                  padding: '2px 6px',
-                  borderRadius: '6px',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(15, 157, 88, 0.12)',
+                  border: '1px solid rgba(15, 157, 88, 0.3)',
+                  color: 'var(--success)',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  lineHeight: 1.4,
                 }}
               >
-                1-Tap
-              </span>
-            </div>
+                {resetSentToEmail && !identifier.includes('@')
+                  ? `Password reset link sent to your registered email (${resetSentToEmail})! Please check your inbox and spam folder.`
+                  : 'Password reset link sent! Please check your email inbox and spam folder.'}
+              </motion.div>
+            )}
 
-            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
-              Testing without typing? Instant demo account access with pre-filled mock NEET progress.
-            </p>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(234, 67, 53, 0.12)',
+                  border: '1px solid rgba(234, 67, 53, 0.3)',
+                  color: 'var(--danger)',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  lineHeight: 1.4,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>{error}</span>
+                {error.toLowerCase().includes('verify') && onNavigateToVerification && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateToVerification(identifier.trim(), password)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--primary)',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      padding: '2px 0',
+                    }}
+                  >
+                    Go to Verification Screen
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            <button
-              type="button"
-              onClick={handleQuickDemoLogin}
-              disabled={submitting}
-              id="quick-demo-login-btn"
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: 'var(--radius-pill)',
-                backgroundColor: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--primary)',
-                fontSize: '12px',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              ⚡ Enter as Demo Aspirant (AIIMS Aim)
-            </button>
-          </div>
-
-          {/* Footer Link: Sign Up */}
-          <div
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={
+              loading ||
+              (!isForgotPassword && (!identifier.trim() || password.length < 6)) ||
+              (isForgotPassword && !identifier.trim())
+            }
             style={{
-              textAlign: 'center',
-              marginTop: '18px',
-              fontSize: '13px',
-              color: 'var(--text-secondary)',
+              width: '100%',
+              padding: '14px 20px',
+              backgroundColor: 'var(--primary)',
+              color: '#FFFFFF',
+              fontSize: '14px',
+              fontWeight: 800,
+              borderRadius: '14px',
+              border: 'none',
+              cursor:
+                loading ||
+                (!isForgotPassword && (!identifier.trim() || password.length < 6)) ||
+                (isForgotPassword && !identifier.trim())
+                  ? 'not-allowed'
+                  : 'pointer',
+              opacity:
+                loading ||
+                (!isForgotPassword && (!identifier.trim() || password.length < 6)) ||
+                (isForgotPassword && !identifier.trim())
+                  ? 0.55
+                  : 1,
+              boxShadow: '0 3px 12px rgba(4, 148, 244, 0.32)',
+              marginTop: '4px',
+              transition: 'all 0.2s ease',
             }}
           >
-            New to PrepMate?{' '}
-            <button
-              type="button"
-              onClick={onNavigateToSignup}
+            {isForgotPassword
+              ? loading
+                ? 'Sending Reset Link...'
+                : 'Send Reset Link'
+              : loading
+              ? 'Logging in...'
+              : 'Login'}
+          </button>
+
+          {/* Back to Login link when in Forgot Password mode */}
+          {isForgotPassword && (
+            <div style={{ textAlign: 'center', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setSuccess(false);
+                  setError('');
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                }}
+              >
+                Remember your password?{' '}
+                <span style={{ color: 'var(--primary)', fontWeight: 800 }}>Sign in</span>
+              </button>
+            </div>
+          )}
+
+          {/* Branding & Terms Footer Card (Hidden in Forgot Password mode) */}
+          {!isForgotPassword && (
+            <div
               style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--primary)',
-                fontWeight: 800,
-                cursor: 'pointer',
-                fontSize: '13px',
-                textDecoration: 'underline',
-                textUnderlineOffset: '2px',
+                width: '100%',
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '18px',
+                padding: '18px 16px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: '16px',
+                gap: '12px',
+                boxShadow: '0 1px 4px rgba(0, 0, 0, 0.04)',
+                boxSizing: 'border-box',
               }}
-              id="navigate-to-signup-btn"
             >
-              Create Account
-            </button>
-          </div>
-        </div>
+              <p
+                style={{
+                  fontSize: '12.5px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.45,
+                  margin: 0,
+                  maxWidth: '340px',
+                  fontWeight: 500,
+                  opacity: 0.85,
+                }}
+              >
+                By using <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong>, you agree to our Terms of Service & Privacy Policy.
+              </p>
 
-        {/* Bottom Trust Indicators */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '14px',
-            marginTop: '18px',
-            fontSize: '11px',
-            color: 'var(--text-tertiary)',
-            flexWrap: 'wrap',
-          }}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <ShieldIcon size={12} color="var(--primary)" /> 100% Private & Secure
-          </span>
-          <span>•</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <CheckCircle2Icon size={12} color="var(--success)" /> Offline-First Sync
-          </span>
-          <span>•</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <TrophyIcon size={12} color="var(--flame)" /> NTA 2026 Syllabus
-          </span>
-        </div>
+              <div
+                style={{
+                  width: '100%',
+                  height: '1px',
+                  backgroundColor: 'var(--border)',
+                  opacity: 0.6,
+                }}
+              />
+
+              <div style={{ maxWidth: '340px' }}>
+                <span
+                  style={{
+                    fontSize: '12.5px',
+                    fontWeight: 500,
+                    color: 'var(--text-secondary)',
+                    opacity: 0.85,
+                    display: 'block',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong> is proudly developed and managed by <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Gothwad</strong> in support of India's Atmanirbhar Bharat initiative.
+                </span>
+              </div>
+            </div>
+          )}
+        </form>
       </div>
-
-      {/* Forgot Password Modal */}
-      <ForgotPasswordModal
-        isOpen={isForgotModalOpen}
-        onClose={() => setIsForgotModalOpen(false)}
-        defaultEmail={email}
-      />
     </div>
   );
 };

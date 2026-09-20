@@ -13,6 +13,7 @@ import { SyllabusPage } from './pages/SyllabusPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
+import { VerificationPage } from './pages/auth/VerificationPage';
 import { ToastContainer } from './components/common/Toast';
 import { TimerModal } from './components/timer/TimerModal';
 import { FloatingTimerBar } from './components/timer/FloatingTimerBar';
@@ -61,7 +62,11 @@ function MainApp() {
     clearConflictLogs,
   } = useData();
 
-  const [authScreen, setAuthScreen] = useState<'login' | 'signup'>('login');
+  const [authScreen, setAuthScreen] = useState<'login' | 'signup' | 'verification'>('login');
+  const [pendingAuthData, setPendingAuthData] = useState<{ email: string; password?: string }>({
+    email: '',
+    password: '',
+  });
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
@@ -125,7 +130,7 @@ function MainApp() {
         >
           <img
             src="/icon-192.png"
-            alt="PrepMate Logo"
+            alt="Prepmate Logo"
             style={{ width: '64px', height: '64px', borderRadius: '16px', boxShadow: 'var(--shadow-md)' }}
             onError={(e) => {
               (e.target as HTMLElement).style.display = 'none';
@@ -133,7 +138,7 @@ function MainApp() {
           />
           <div style={{ textAlign: 'center' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.4px' }}>
-              PrepMate
+              Prepmate
             </h1>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
               Loading your study dashboard...
@@ -163,7 +168,7 @@ function MainApp() {
     );
   }
 
-  // 2. Unauthenticated Protected View: Show Login or Signup Page
+  // 2. Unauthenticated Protected View: Show Login, Signup, or Email Verification Page
   if (!user) {
     return (
       <div className="app-viewport" id="prepmate-viewport">
@@ -171,17 +176,42 @@ function MainApp() {
           {authScreen === 'login' ? (
             <LoginPage
               onNavigateToSignup={() => setAuthScreen('signup')}
+              onNavigateToVerification={(email, password) => {
+                setPendingAuthData({ email, password });
+                setAuthScreen('verification');
+              }}
+              prefilledIdentifier={pendingAuthData.email}
+              prefilledPassword={pendingAuthData.password}
+              theme={theme}
+              onToggleTheme={handleToggleTheme}
+            />
+          ) : authScreen === 'signup' ? (
+            <SignupPage
+              onNavigateToLogin={() => setAuthScreen('login')}
+              onNavigateToVerification={(email, password) => {
+                setPendingAuthData({ email, password });
+                setAuthScreen('verification');
+              }}
               theme={theme}
               onToggleTheme={handleToggleTheme}
             />
           ) : (
-            <SignupPage
-              onNavigateToLogin={() => setAuthScreen('login')}
+            <VerificationPage
+              email={pendingAuthData.email}
+              password={pendingAuthData.password}
+              onNavigateToLogin={(autofillData) => {
+                if (autofillData) {
+                  setPendingAuthData({
+                    email: autofillData.email,
+                    password: autofillData.password,
+                  });
+                }
+                setAuthScreen('login');
+              }}
               theme={theme}
               onToggleTheme={handleToggleTheme}
             />
           )}
-          <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         </div>
       </div>
     );

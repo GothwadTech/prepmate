@@ -13,8 +13,8 @@ service cloud.firestore {
 
     // 1. User profile documents
     match /users/{userId} {
-      // Authenticated users can view profiles for partner search, leaderboard, and comparison
-      allow read: if isAuthenticated();
+      // Allow read so users can resolve usernames during login, check availability, and reset password
+      allow read: if true;
       // Only the user themselves can create or update their profile
       allow create, update: if isOwner(userId);
       allow delete: if false; // Profiles cannot be deleted without admin intervention

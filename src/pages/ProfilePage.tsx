@@ -1128,7 +1128,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             id="account-logout-btn"
             style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
           >
-            Log Out from PrepMate
+            Log Out from Prepmate
           </Button>
         )}
       </Card>
@@ -1149,7 +1149,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <AwardIcon size={16} color="var(--primary)" />
-          <strong style={{ color: 'var(--text-primary)' }}>PrepMate</strong>
+          <strong style={{ color: 'var(--text-primary)' }}>Prepmate</strong>
         </div>
         <p>Built with ❤️ by Gothwad Tech for NEET Aspirants</p>
         <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>

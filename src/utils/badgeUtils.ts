@@ -45,7 +45,7 @@ export function calculateUserBadges(params: {
       id: 'first-step',
       title: 'First Step',
       icon: '🚀',
-      description: 'Complete your first study task in PrepMate',
+      description: 'Complete your first study task in Prepmate',
       category: 'tasks',
       unlocked: totalTasksCompleted >= 1,
       currentProgress: Math.min(1, totalTasksCompleted),

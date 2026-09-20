@@ -1,5 +1,5 @@
 /**
- * PrepMate - Notification & Reminder Service (Phase 15)
+ * Prepmate - Notification & Reminder Service (Phase 15)
  * Handles Daily Study Reminders, Streak Warnings, and Partner Activity Notifications.
  * Supports in-app Notification Center and Browser Web Notifications API.
  */
@@ -303,7 +303,7 @@ class NotificationService {
       default:
         this.addNotification({
           type: 'system',
-          title: '⚡ PrepMate System Notice',
+          title: '⚡ Prepmate System Notice',
           message: 'All your offline changes have been backed up in local cache and are ready to sync.',
           actionTab: 'profile',
           actionLabel: 'View Sync Status',

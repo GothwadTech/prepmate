@@ -1,5 +1,5 @@
 /**
- * PrepMate - Partner & Request Service (Phase 9)
+ * Prepmate - Partner & Request Service (Phase 9)
  * Handles username search, partner requests (send, accept, reject, cancel),
  * and partnership state with Firebase Firestore and local-first fallback caching.
  */

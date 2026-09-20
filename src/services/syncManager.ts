@@ -1,5 +1,5 @@
 /**
- * PrepMate - Sync Manager
+ * Prepmate - Sync Manager
  * Bridges Local Cache, Offline Queue, and Cloud Firestore.
  * Implements local-first optimistic updates and background cloud synchronization.
  */

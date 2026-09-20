@@ -1,5 +1,5 @@
 /**
- * PrepMate - Streak & Weekly Analytics Engine
+ * Prepmate - Streak & Weekly Analytics Engine
  * Provides streak calculation, GitHub-style heatmap generation,
  * weekly calendar tracking, and NEET subject balance analysis.
  */

@@ -140,11 +140,11 @@ export const VsComparisonBoard: React.FC<VsComparisonBoardProps> = ({
       ? "We are tied neck-to-neck! ⚡"
       : `${partner.name} is leading by +${Math.abs(scoreDiff)} pts! 🎯`;
 
-    const shareText = `⚔️ PrepMate NEET Study Duel (${timeframe === 'today' ? "Today" : "This Week"}) ⚔️
+    const shareText = `⚔️ Prepmate NEET Study Duel (${timeframe === 'today' ? "Today" : "This Week"}) ⚔️
 👤 Me: ${currentMyScore}/100 pts (${currentMyHours} hrs, ${currentMyTasks} tasks, 🔥 ${myStreak}d streak)
 🤝 ${partner.name}: ${currentPartnerScore}/100 pts (${currentPartnerHours} hrs, ${currentPartnerTasks} tasks, 🔥 ${partnerStreak}d streak)
 📢 Status: ${leaderText}
-🚀 Target NEET 2026! Powered by PrepMate.`;
+🚀 Target NEET 2026! Powered by Prepmate.`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareText);

@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
         transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
       }}
     >
-      {/* 1. Left: PrepMate Brand Title */}
+      {/* 1. Left: Prepmate Brand Title */}
       <div
         className="header-brand"
         id="brand-header-link"
@@ -73,19 +73,24 @@ export const Header: React.FC<HeaderProps> = ({
           className="brand-icon-box"
           id="brand-icon-container"
           style={{
-            width: '30px',
-            height: '30px',
+            width: '32px',
+            height: '32px',
             borderRadius: 'var(--radius-sm)',
-            backgroundColor: 'var(--primary)',
-            color: '#FFFFFF',
+            overflow: 'hidden',
+            backgroundColor: 'var(--surface-variant)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            boxShadow: '0 2px 6px rgba(4, 148, 244, 0.3)',
+            boxShadow: '0 2px 6px rgba(4, 148, 244, 0.25)',
           }}
         >
-          <BookIcon size={16} color="#FFFFFF" />
+          <img
+            src="/icon-192-maskable.png"
+            alt="Prepmate"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            referrerPolicy="no-referrer"
+          />
         </div>
         <span
           className="brand-name"
@@ -97,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
             lineHeight: 1.2,
           }}
         >
-          PrepMate
+          Prepmate
         </span>
       </div>
 

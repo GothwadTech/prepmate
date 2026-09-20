@@ -1,5 +1,5 @@
 /**
- * PrepMate - Data Context (Phase 3)
+ * Prepmate - Data Context (Phase 3)
  * Unified state management combining Firestore, Cache Layer, and Offline Queue.
  */
 
@@ -92,108 +92,11 @@ interface DataContextType {
   clearConflictLogs: () => void;
 }
 
-const defaultTasksSeed: TaskItem[] = [
-  {
-    id: 'task-1',
-    title: 'Current Electricity: 30 Numerical MCQs',
-    subject: 'Physics',
-    chapter: 'Current Electricity',
-    type: 'MCQs',
-    targetCount: 30,
-    completedCount: 30,
-    completed: true,
-    date: new Date().toISOString().split('T')[0],
-  },
-  {
-    id: 'task-2',
-    title: 'Chemical Bonding: Molecular Orbital Theory Revision',
-    subject: 'Chemistry',
-    chapter: 'Chemical Bonding',
-    type: 'Revision',
-    targetCount: 1,
-    completedCount: 0,
-    completed: false,
-    date: new Date().toISOString().split('T')[0],
-  },
-  {
-    id: 'task-3',
-    title: 'NCERT Line-by-Line Reading: Human Reproduction',
-    subject: 'Biology',
-    chapter: 'Human Reproduction',
-    type: 'Notes',
-    targetCount: 1,
-    completedCount: 1,
-    completed: true,
-    date: new Date().toISOString().split('T')[0],
-  },
-  {
-    id: 'task-4',
-    title: 'Biomolecules 45 Practice Questions',
-    subject: 'Chemistry',
-    chapter: 'Biomolecules',
-    type: 'MCQs',
-    targetCount: 45,
-    completedCount: 0,
-    completed: false,
-    date: new Date().toISOString().split('T')[0],
-  },
-];
+const defaultTasksSeed: TaskItem[] = [];
 
-const defaultGoalsSeed: GoalItem[] = [
-  {
-    id: 'goal-1',
-    title: 'Complete 500 Biology NCERT MCQs',
-    subject: 'Biology',
-    chapter: 'Ecology & Environment',
-    deadline: '7 Days',
-    targetMetric: '500 MCQs',
-    progressPercent: 65,
-    completed: false,
-  },
-  {
-    id: 'goal-2',
-    title: 'Optics Formula Sheet & Ray Diagrams',
-    subject: 'Physics',
-    chapter: 'Ray & Wave Optics',
-    deadline: '4 Days',
-    targetMetric: 'Full Formula Map',
-    progressPercent: 80,
-    completed: false,
-  },
-  {
-    id: 'goal-3',
-    title: 'Inorganic Coordination Compounds Revision',
-    subject: 'Chemistry',
-    chapter: 'Coordination Compounds',
-    deadline: 'Completed',
-    targetMetric: 'IUPAC & Isomerism notes',
-    progressPercent: 100,
-    completed: true,
-  },
-];
+const defaultGoalsSeed: GoalItem[] = [];
 
-const defaultSessionsSeed: StudySession[] = [
-  {
-    id: 'session-1',
-    subject: 'Physics',
-    chapter: 'Current Electricity',
-    durationMinutes: 25,
-    mode: 'pomodoro',
-    date: new Date().toISOString().split('T')[0],
-    completedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    notes: 'Mastered Kirchhoff laws and solved 15 PYQs',
-  },
-  {
-    id: 'session-2',
-    subject: 'Biology',
-    chapter: 'Human Reproduction',
-    durationMinutes: 50,
-    mode: 'deep_study',
-    date: new Date().toISOString().split('T')[0],
-    completedAt: new Date(Date.now() - 3600000).toISOString(),
-    notes: 'NCERT diagram memorization & gametogenesis flow',
-  },
-];
+const defaultSessionsSeed: StudySession[] = [];
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -211,7 +114,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.warn(e);
     }
-    return defaultSessionsSeed;
+    return [];
   });
   const [loadingData, setLoadingData] = useState<boolean>(true);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(syncManager.getStatus());
@@ -249,18 +152,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const [stats, setStats] = useState<UserStats>({
-    todayStudyMinutes: 210,
-    tasksCompletedToday: 2,
-    totalTasksToday: 4,
-    streakDays: 4,
-    longestStreakDays: 12,
-    totalActiveDays: 42,
-    streakShields: 1,
+    todayStudyMinutes: 0,
+    tasksCompletedToday: 0,
+    totalTasksToday: 0,
+    streakDays: 0,
+    longestStreakDays: 0,
+    totalActiveDays: 0,
+    streakShields: 0,
     targetYear: user?.targetYear || '2026',
     targetScore: user?.targetScore || 685,
-    physicsProgress: 60,
-    chemistryProgress: 45,
-    biologyProgress: 75,
+    physicsProgress: 0,
+    chemistryProgress: 0,
+    biologyProgress: 0,
   });
 
   // Phase 9 Partner system state
@@ -371,7 +274,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const [tasksRes, goalsRes, logsRes] = await Promise.all([
           syncManager.loadTasks(userId, defaultTasksSeed),
           syncManager.loadGoals(userId, defaultGoalsSeed),
-          syncManager.loadDailyLogs(userId, generateDefaultDailyLogsSeed(userId)),
+          syncManager.loadDailyLogs(userId, []),
         ]);
 
         if (isMounted) {
@@ -385,7 +288,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isMounted) {
           setTasks(defaultTasksSeed);
           setGoals(defaultGoalsSeed);
-          setDailyLogs(generateDefaultDailyLogsSeed(userId));
+          setDailyLogs([]);
           setLoadingData(false);
         }
       }
