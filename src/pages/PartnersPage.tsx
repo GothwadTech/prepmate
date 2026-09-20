@@ -90,13 +90,13 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
   return (
     <div id="partners-competition-page" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* X-Factor Banner */}
-      <div className="banner-box" id="partner-xfactor-banner">
+      <Card variant="hero" id="partner-xfactor-banner">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <PartnersIcon size={20} color="var(--primary)" />
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)' }}>
-                X-Factor Feature
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>
+                NEET Study Partner & Live Sync
               </span>
             </div>
             <h2 style={{ fontSize: '18px', fontWeight: 800, marginTop: '2px' }}>
@@ -104,7 +104,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
             </h2>
           </div>
           <Badge variant={isActuallyConnected ? 'success' : 'primary'}>
-            {isActuallyConnected ? 'Live Sync ⚡' : 'Phase 10'}
+            {isActuallyConnected ? 'Live Sync ⚡' : '🩺 Live Duel'}
           </Badge>
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
@@ -112,7 +112,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
             ? `Aap aur ${displayPartner.name} live study competition me hain! Sath me daily targets complete karo aur real-time cheers bhejo.`
             : 'Apne dost ko partner banayein, daily padhai ke ghante aur tasks compare karein aur ek dusre ko motivate karein!'}
         </p>
-      </div>
+      </Card>
 
       {/* Mode Navigation Tabs (Segmented Control) */}
       <div

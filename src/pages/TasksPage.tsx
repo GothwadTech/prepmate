@@ -3,6 +3,7 @@ import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Input } from '../components/common/Input';
+import { EmptyState } from '../components/common/EmptyState';
 import {
   PlusIcon,
   CheckIcon,
@@ -14,6 +15,7 @@ import {
   CalendarIcon,
   CheckCircle2Icon,
   ClockIcon,
+  TasksIcon,
 } from '../components/icons/SvgIcons';
 import { TaskItem, SubjectType, TaskType } from '../types';
 import { NEET_CHAPTERS, PRESET_TASK_TEMPLATES, QuickTemplate } from '../data/neetSyllabus';
@@ -289,6 +291,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({
       {/* 2. Daily Progress Summary Card with Subject Meters */}
       <Card
         id="tasks-progress-card"
+        variant="hero"
         title="Day's Target Completion"
         subtitle={`${completedDateTasks} of ${totalDateTasks} study tasks done`}
         action={
@@ -410,26 +413,19 @@ export const TasksPage: React.FC<TasksPageProps> = ({
       {/* 4. Task List Grouped or Filtered */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }} id="task-list-container">
         {subjectFilteredTasks.length === 0 ? (
-          <div
-            style={{
-              padding: '36px 16px',
-              textAlign: 'center',
-              background: 'var(--surface)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px dashed var(--border)',
-            }}
-            id="empty-tasks-placeholder"
-          >
-            <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {selectedDate === todayStr ? 'Aaj ke liye koi task nahi hai!' : `${formatDateDisplay(selectedDate)} ke liye koi task nahi hai`}
-            </p>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Niche button daba kar target add karein ya quick NEET templates choose karein.
-            </p>
+          <div>
+            <EmptyState
+              icon={<TasksIcon size={26} color="var(--primary)" />}
+              badge="Daily Routine"
+              title={selectedDate === todayStr ? 'Aaj ke liye koi study task nahi hai!' : `${formatDateDisplay(selectedDate)} ke liye koi task nahi hai`}
+              description="Naya task add karein ya niche diye gaye high-yield NEET templates se quick plan shuru karein."
+              actionText="+ Naya Task Add Karein"
+              onAction={() => handleOpenAddModal()}
+            />
 
             {/* Quick Preset Buttons for fast onboarding */}
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Quick High-Yield NEET Suggestions:
               </span>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px' }}>
@@ -442,7 +438,9 @@ export const TasksPage: React.FC<TasksPageProps> = ({
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontWeight: 700 }}>+ {template.title}</span>
-                      <Badge variant={getSubjectBadgeVariant(template.subject)}>{template.subject}</Badge>
+                      <Badge variant={getSubjectBadgeVariant(template.subject)}>
+                        {template.subject === 'Physics' ? '⚡ Physics' : template.subject === 'Chemistry' ? '⚗️ Chemistry' : '🧬 Biology'}
+                      </Badge>
                     </div>
                     <span style={{ color: 'var(--text-secondary)' }}>
                       {template.chapter} • {template.type} ({template.targetCount})
@@ -453,74 +451,81 @@ export const TasksPage: React.FC<TasksPageProps> = ({
             </div>
           </div>
         ) : (
-          subjectFilteredTasks.map((task) => (
-            <div key={task.id} className="task-item" id={`task-item-${task.id}`}>
+          subjectFilteredTasks.map((task) => {
+            const subjectIcon = task.subject === 'Physics' ? '⚡' : task.subject === 'Chemistry' ? '⚗️' : '🧬';
+            return (
               <div
-                className="task-checkbox-wrap"
-                onClick={() => onToggleTask(task.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && onToggleTask(task.id)}
-                style={{ flex: 1, minWidth: 0 }}
+                key={task.id}
+                className={`task-item task-${task.subject.toLowerCase()} ${task.completed ? 'completed' : ''}`}
+                id={`task-item-${task.id}`}
               >
-                <div className={`task-checkbox ${task.completed ? 'checked' : ''}`}>
-                  {task.completed && <CheckIcon size={14} color="#FFFFFF" />}
-                </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <p className={`task-text ${task.completed ? 'completed' : ''}`}>
-                    {task.title}
-                  </p>
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Badge variant={getSubjectBadgeVariant(task.subject)}>
-                      {task.subject}
-                    </Badge>
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                      {task.chapter} • {task.type} ({task.targetCount})
-                    </span>
-                    {task.completed && (
-                      <span style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 700 }}>
-                        ✓ Done
+                <div
+                  className="task-checkbox-wrap"
+                  onClick={() => onToggleTask(task.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && onToggleTask(task.id)}
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  <div className={`task-checkbox ${task.completed ? 'checked' : ''}`}>
+                    {task.completed && <CheckIcon size={14} color="#FFFFFF" />}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p className={`task-text ${task.completed ? 'completed' : ''}`}>
+                      {task.title}
+                    </p>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Badge variant={getSubjectBadgeVariant(task.subject)}>
+                        {subjectIcon} {task.subject}
+                      </Badge>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        {task.chapter} • {task.type} ({task.targetCount})
                       </span>
-                    )}
+                      {task.completed && (
+                        <span style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 800 }}>
+                          ✓ Completed
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons: Timer, Edit & Delete */}
-              <div className="task-actions-wrap">
-                <button
-                  type="button"
-                  className="task-action-btn"
-                  onClick={() => openTimer({ subject: task.subject, chapter: task.chapter, id: task.id })}
-                  title="Start Study Timer for this task"
-                  aria-label={`Start timer for ${task.title}`}
-                  id={`timer-task-btn-${task.id}`}
-                >
-                  <ClockIcon size={15} color="var(--primary)" />
-                </button>
-                <button
-                  type="button"
-                  className="task-action-btn"
-                  onClick={() => handleOpenEditModal(task)}
-                  title="Edit task"
-                  aria-label={`Edit task ${task.title}`}
-                  id={`edit-task-btn-${task.id}`}
-                >
-                  <EditIcon size={15} />
-                </button>
-                <button
-                  type="button"
-                  className="task-action-btn delete"
-                  onClick={() => setDeleteConfirmId(task.id)}
-                  title="Delete task"
-                  aria-label={`Delete task ${task.title}`}
-                  id={`delete-task-btn-${task.id}`}
-                >
-                  <TrashIcon size={15} />
-                </button>
+                {/* Action Buttons: Timer, Edit & Delete */}
+                <div className="task-actions-wrap">
+                  <button
+                    type="button"
+                    className="task-action-btn"
+                    onClick={() => openTimer({ subject: task.subject, chapter: task.chapter, id: task.id })}
+                    title="Start Study Timer for this task"
+                    aria-label={`Start timer for ${task.title}`}
+                    id={`timer-task-btn-${task.id}`}
+                  >
+                    <ClockIcon size={15} color="var(--primary)" />
+                  </button>
+                  <button
+                    type="button"
+                    className="task-action-btn"
+                    onClick={() => handleOpenEditModal(task)}
+                    title="Edit task"
+                    aria-label={`Edit task ${task.title}`}
+                    id={`edit-task-btn-${task.id}`}
+                  >
+                    <EditIcon size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className="task-action-btn delete"
+                    onClick={() => setDeleteConfirmId(task.id)}
+                    title="Delete task"
+                    aria-label={`Delete task ${task.title}`}
+                    id={`delete-task-btn-${task.id}`}
+                  >
+                    <TrashIcon size={15} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

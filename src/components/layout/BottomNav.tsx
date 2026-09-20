@@ -5,7 +5,7 @@ import {
   TasksIcon,
   GoalsIcon,
   PartnersIcon,
-  ProfileIcon,
+  BookIcon,
 } from '../icons/SvgIcons';
 import { useData } from '../../context/DataContext';
 
@@ -47,14 +47,39 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
       badge: pendingPartnerRequestsCount,
     },
     {
-      id: 'profile',
-      label: 'Profile',
-      icon: (active) => <ProfileIcon size={22} color={active ? 'var(--primary)' : 'currentColor'} />,
+      id: 'syllabus',
+      label: 'Syllabus',
+      icon: (active) => <BookIcon size={22} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
   ];
 
   return (
-    <nav className="bottom-nav" id="bottom-navigation-bar" role="navigation" aria-label="Main Navigation">
+    <nav
+      className="bottom-nav"
+      id="bottom-navigation-bar"
+      role="navigation"
+      aria-label="Main Navigation"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '480px',
+        height: '62px',
+        backgroundColor: 'var(--surface)',
+        borderTop: '1px solid var(--border)',
+        borderTopLeftRadius: '18px',
+        borderTopRightRadius: '18px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        padding: '4px 6px',
+        zIndex: 60,
+        boxShadow: '0 -3px 12px rgba(0, 0, 0, 0.05)',
+        transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
+      }}
+    >
       {items.map((item) => {
         const isActive = activeTab === item.id;
         return (
@@ -99,4 +124,3 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
     </nav>
   );
 };
-

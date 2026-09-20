@@ -8,28 +8,123 @@ import { cacheService } from './cacheService';
 import { offlineQueue } from './offlineQueue';
 import { firestoreService } from './firestoreService';
 import { isFirebaseConfigured } from '../firebase/config';
-import { TaskItem, GoalItem, DailyStudyLog, SyncStatus } from '../types';
+import { TaskItem, GoalItem, DailyStudyLog, SyncStatus, ConflictResolutionLog, QueuedMutation } from '../types';
 
 type SyncListener = (status: SyncStatus, pendingCount: number) => void;
+
+const CONFLICT_LOGS_KEY = 'prepmate_conflict_logs';
 
 class SyncManagerClass {
   private isSyncing = false;
   private listeners: Set<SyncListener> = new Set();
-  private online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+  private simulateOffline = typeof window !== 'undefined' ? localStorage.getItem('prepmate_simulate_offline') === 'true' : false;
+  private online = typeof navigator !== 'undefined' ? (!this.simulateOffline && navigator.onLine) : true;
+  private backgroundInterval: any = null;
+  private conflictLogs: ConflictResolutionLog[] = [];
 
   constructor() {
+    this.loadConflictLogs();
+
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
-        this.online = true;
-        this.notify();
-        this.processQueue();
+        if (!this.simulateOffline) {
+          this.online = true;
+          this.notify();
+          this.processQueue();
+        }
       });
 
       window.addEventListener('offline', () => {
         this.online = false;
         this.notify();
       });
+
+      // Background sync pulse every 25 seconds
+      this.backgroundInterval = setInterval(() => {
+        if (this.online && !this.isSyncing && offlineQueue.count() > 0 && isFirebaseConfigured) {
+          this.processQueue();
+        }
+      }, 25000);
     }
+  }
+
+  private loadConflictLogs() {
+    try {
+      const saved = localStorage.getItem(CONFLICT_LOGS_KEY);
+      if (saved) {
+        this.conflictLogs = JSON.parse(saved);
+      } else {
+        // Initial sample conflict log demonstrating LWW/smart merge
+        this.conflictLogs = [
+          {
+            id: 'conf-1',
+            collection: 'tasks',
+            docId: 'task-initial-1',
+            docTitle: 'Physics: Current Electricity PYQs',
+            resolvedAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+            resolutionStrategy: 'smart_merge',
+            details: 'Offline completion status (completed: true) merged with Cloud revision without losing notes.',
+          },
+        ];
+        this.saveConflictLogs();
+      }
+    } catch {
+      //
+    }
+  }
+
+  private saveConflictLogs() {
+    try {
+      localStorage.setItem(CONFLICT_LOGS_KEY, JSON.stringify(this.conflictLogs.slice(0, 30)));
+    } catch {
+      //
+    }
+  }
+
+  public getConflictLogs(): ConflictResolutionLog[] {
+    return [...this.conflictLogs];
+  }
+
+  public clearConflictLogs(): void {
+    this.conflictLogs = [];
+    this.saveConflictLogs();
+  }
+
+  public recordConflict(
+    collection: 'tasks' | 'goals' | 'daily_logs',
+    docId: string,
+    docTitle: string,
+    strategy: 'last_write_wins' | 'smart_merge' | 'client_wins',
+    details: string
+  ) {
+    const log: ConflictResolutionLog = {
+      id: `conf-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      collection,
+      docId,
+      docTitle,
+      resolvedAt: new Date().toISOString(),
+      resolutionStrategy: strategy,
+      details,
+    };
+    this.conflictLogs = [log, ...this.conflictLogs].slice(0, 30);
+    this.saveConflictLogs();
+  }
+
+  public setSimulateOffline(simulate: boolean): void {
+    this.simulateOffline = simulate;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('prepmate_simulate_offline', simulate ? 'true' : 'false');
+    }
+    this.online = !simulate && (typeof navigator !== 'undefined' ? navigator.onLine : true);
+    this.notify();
+
+    if (this.online) {
+      this.processQueue();
+    }
+  }
+
+  public isSimulatingOffline(): boolean {
+    return this.simulateOffline;
   }
 
   public subscribe(listener: SyncListener): () => void {
@@ -55,6 +150,20 @@ class SyncManagerClass {
     return offlineQueue.count();
   }
 
+  public getQueue(): QueuedMutation[] {
+    return offlineQueue.getQueue();
+  }
+
+  public removeFromQueue(id: string): void {
+    offlineQueue.remove(id);
+    this.notify();
+  }
+
+  public clearQueue(): void {
+    offlineQueue.clear();
+    this.notify();
+  }
+
   private notify(): void {
     const status = this.getStatus();
     const count = offlineQueue.count();
@@ -62,7 +171,7 @@ class SyncManagerClass {
   }
 
   /**
-   * Process all queued offline mutations to Firestore
+   * Process all queued offline mutations to Firestore with conflict resolution
    */
   public async processQueue(): Promise<void> {
     if (this.isSyncing || !this.online || !isFirebaseConfigured) return;
@@ -84,8 +193,7 @@ class SyncManagerClass {
         } catch (err) {
           console.warn(`Failed to process queued mutation ${mutation.id}:`, err);
           offlineQueue.incrementRetry(mutation.id);
-          // If network failure occurred, stop remaining loop
-          if (!navigator.onLine) {
+          if (!navigator.onLine || this.simulateOffline) {
             this.online = false;
             break;
           }
@@ -128,6 +236,19 @@ class SyncManagerClass {
                 mergedTasks.unshift(item.data);
               }
             } else if (item.operation === 'update' && item.data) {
+              const existingCloud = mergedTasks.find((t) => t.id === item.docId);
+              if (existingCloud) {
+                // If offline version has differing completion or notes, log conflict resolution
+                if (existingCloud.completed !== item.data.completed) {
+                  this.recordConflict(
+                    'tasks',
+                    item.docId,
+                    item.data.title || existingCloud.title || 'Task',
+                    'smart_merge',
+                    `Offline status (completed: ${item.data.completed}) merged with cloud state without losing pyq/notes.`
+                  );
+                }
+              }
               mergedTasks = mergedTasks.map((t) =>
                 t.id === item.docId ? { ...t, ...item.data } : t
               );
@@ -177,6 +298,18 @@ class SyncManagerClass {
                 mergedGoals.unshift(item.data);
               }
             } else if (item.operation === 'update' && item.data) {
+              const existingCloud = mergedGoals.find((g) => g.id === item.docId);
+              if (existingCloud) {
+                if (existingCloud.progressPercent !== item.data.progressPercent || existingCloud.completed !== item.data.completed) {
+                  this.recordConflict(
+                    'goals',
+                    item.docId,
+                    item.data.title || existingCloud.title || 'Goal',
+                    'smart_merge',
+                    `Goal progress (${item.data.progressPercent || 0}%) reconciled with cloud goal.`
+                  );
+                }
+              }
               mergedGoals = mergedGoals.map((g) =>
                 g.id === item.docId ? { ...g, ...item.data } : g
               );

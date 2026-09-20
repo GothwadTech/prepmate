@@ -150,18 +150,21 @@ html, body {
   }
 }
 
-/* Header Component (Gmail / Play Store Style) */
+/* Header Component */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 50;
-  height: 58px;
-  background-color: var(--bg);
+  height: 52px;
+  background-color: var(--surface);
   border-bottom: 1px solid var(--border);
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
   transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
@@ -174,8 +177,8 @@ html, body {
 }
 
 .brand-icon-box {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-sm);
   background: var(--primary);
   color: #FFFFFF;
@@ -193,17 +196,14 @@ html, body {
 
 .brand-name {
   font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
 .brand-sub {
-  font-size: 11px;
-  color: var(--text-secondary);
-  font-weight: 500;
-  letter-spacing: 0.2px;
+  display: none;
 }
 
 .header-actions {
@@ -223,7 +223,7 @@ html, body {
   overflow-y: auto;
 }
 
-/* Bottom Navigation Bar (5 Tabs, Gmail/Play Store Style) */
+/* Bottom Navigation Bar (5 Tabs) */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -231,15 +231,17 @@ html, body {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  height: 64px;
+  height: 62px;
   background-color: var(--surface);
   border-top: 1px solid var(--border);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: space-around;
   padding: 4px 6px;
   z-index: 60;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 -3px 14px rgba(0, 0, 0, 0.06);
   transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
@@ -383,7 +385,7 @@ html, body {
   width: 100%;
 }
 
-/* 2. Cards */
+/* 2. Cards & Elevated Containers */
 .card {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -392,7 +394,77 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Physics Distinct Card */
+.card-physics {
+  background: linear-gradient(180deg, rgba(26, 115, 232, 0.06) 0%, var(--surface) 35%);
+  border: 1px solid rgba(26, 115, 232, 0.22);
+  border-top: 3.5px solid var(--subject-physics);
+}
+
+.card-physics:hover {
+  border-color: rgba(26, 115, 232, 0.45);
+  box-shadow: 0 4px 14px rgba(26, 115, 232, 0.12);
+}
+
+/* Chemistry Distinct Card */
+.card-chemistry {
+  background: linear-gradient(180deg, rgba(227, 116, 0, 0.06) 0%, var(--surface) 35%);
+  border: 1px solid rgba(227, 116, 0, 0.22);
+  border-top: 3.5px solid var(--subject-chemistry);
+}
+
+.card-chemistry:hover {
+  border-color: rgba(227, 116, 0, 0.45);
+  box-shadow: 0 4px 14px rgba(227, 116, 0, 0.12);
+}
+
+/* Biology Distinct Card */
+.card-biology {
+  background: linear-gradient(180deg, rgba(15, 157, 88, 0.06) 0%, var(--surface) 35%);
+  border: 1px solid rgba(15, 157, 88, 0.22);
+  border-top: 3.5px solid var(--subject-biology);
+}
+
+.card-biology:hover {
+  border-color: rgba(15, 157, 88, 0.45);
+  box-shadow: 0 4px 14px rgba(15, 157, 88, 0.12);
+}
+
+/* Hero / Target Card */
+.card-hero {
+  background: linear-gradient(135deg, rgba(4, 148, 244, 0.12) 0%, rgba(15, 157, 88, 0.06) 100%), var(--surface);
+  border: 1px solid rgba(4, 148, 244, 0.32);
+  box-shadow: 0 4px 16px rgba(4, 148, 244, 0.08);
+}
+
+/* Gold / Streak Card */
+.card-gold {
+  background: linear-gradient(135deg, rgba(249, 171, 0, 0.14) 0%, rgba(255, 109, 0, 0.05) 100%), var(--surface);
+  border: 1px solid rgba(249, 171, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(249, 171, 0, 0.08);
+}
+
+/* Glass Card */
+.card-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .card-glass {
+  background: rgba(48, 49, 52, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card-glow {
+  box-shadow: 0 0 20px rgba(4, 148, 244, 0.2);
 }
 
 .card-clickable {
@@ -400,7 +472,8 @@ html, body {
 }
 
 .card-clickable:hover {
-  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .card-header {
@@ -410,15 +483,24 @@ html, body {
   gap: 8px;
 }
 
+.card-action-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .card-title {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
+  letter-spacing: -0.2px;
 }
 
 .card-subtitle {
   font-size: 12px;
   color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 1px;
 }
 
 /* 3. Badges / Chips */
@@ -594,48 +676,155 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
+  padding: 13px 14px;
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   gap: 12px;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+  position: relative;
+}
+
+.task-item:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Subject-specific task accents */
+.task-item.task-physics {
+  border-left: 3.5px solid var(--subject-physics);
+}
+.task-item.task-physics:hover {
+  border-color: rgba(26, 115, 232, 0.35);
+}
+
+.task-item.task-chemistry {
+  border-left: 3.5px solid var(--subject-chemistry);
+}
+.task-item.task-chemistry:hover {
+  border-color: rgba(227, 116, 0, 0.35);
+}
+
+.task-item.task-biology {
+  border-left: 3.5px solid var(--subject-biology);
+}
+.task-item.task-biology:hover {
+  border-color: rgba(15, 157, 88, 0.35);
 }
 
 .task-checkbox-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   cursor: pointer;
+  user-select: none;
 }
 
 .task-checkbox {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
   border: 2px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background-color: var(--bg);
   transition: all var(--transition-fast);
 }
 
-.task-checkbox.checked {
-  background-color: var(--primary);
+.task-checkbox:hover {
   border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.task-checkbox.checked {
+  background-color: var(--success);
+  border-color: var(--success);
   color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(15, 157, 88, 0.3);
+  animation: checkbox-bounce 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes checkbox-bounce {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 .task-text {
-  font-size: 14px;
+  font-size: 14.5px;
+  font-weight: 600;
   color: var(--text-primary);
+  line-height: 1.35;
+  transition: color var(--transition-fast);
 }
 
 .task-text.completed {
   text-decoration: line-through;
   color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+/* Goal Card Upgrades */
+.goal-card {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.goal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+}
+
+.goal-card.completed {
+  opacity: 0.85;
+  background-color: var(--surface-variant);
+}
+
+/* Skeleton Shimmer Loading */
+.skeleton-box {
+  background: linear-gradient(90deg, var(--surface-variant) 0%, var(--border-subtle) 50%, var(--surface-variant) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-item {
+  pointer-events: none;
+}
+
+/* Live Pulse Animation for Online / Active studying */
+.live-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--success);
+  position: relative;
+  display: inline-block;
+}
+
+.live-pulse-dot::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--success);
+  animation: live-pulse 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes live-pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
 }
 
 /* 9. Segmented Control / Filter Pills */

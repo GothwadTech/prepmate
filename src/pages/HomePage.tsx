@@ -16,6 +16,8 @@ import {
   ProfileIcon,
   TasksIcon,
   PlayIcon,
+  BookIcon,
+  BarChartIcon,
 } from '../components/icons/SvgIcons';
 import { AppTab, UserStats, SubjectType } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -158,7 +160,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
               Target NEET {user?.targetYear || stats.targetYear} • Aiming for {user?.targetScore || stats.targetScore}+ Marks
             </p>
           </div>
-          <Badge variant="primary">Phase 4 Active</Badge>
+          <Badge variant="primary">🩺 AIIMS Aspirant</Badge>
         </div>
 
         {/* NEET Countdown Banner Pill */}
@@ -199,6 +201,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
       {/* 2. Daily Overview Card (Today's Progress) */}
       <Card
         id="today-overview-card"
+        variant="hero"
         title="Today's Overview"
         subtitle="Daily preparation metrics & completion status"
         action={
@@ -359,101 +362,201 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
         )}
       </div>
 
-      {/* 4. Subject-wise Progress Bars (Physics, Chemistry, Biology) */}
-      <Card
-        id="subject-progress-card"
-        title="Subject-wise Progress"
-        subtitle="Live NEET preparation balance for today"
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {/* Physics */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    background: 'var(--subject-physics)',
-                  }}
-                />
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--subject-physics)' }}>
-                  Physics
-                </span>
-                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>• Mechanics & Electricity</span>
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                {physicsProg}%
-              </span>
-            </div>
-            <div className="progress-track" style={{ height: '7px' }}>
-              <div
-                className="progress-fill progress-fill-physics"
-                style={{ width: `${physicsProg}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Chemistry */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    background: 'var(--subject-chemistry)',
-                  }}
-                />
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--subject-chemistry)' }}>
-                  Chemistry
-                </span>
-                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>• Organic & Inorganic</span>
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                {chemistryProg}%
-              </span>
-            </div>
-            <div className="progress-track" style={{ height: '7px' }}>
-              <div
-                className="progress-fill progress-fill-chemistry"
-                style={{ width: `${chemistryProg}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Biology */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    background: 'var(--subject-biology)',
-                  }}
-                />
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--subject-biology)' }}>
-                  Biology (Botany + Zoology)
-                </span>
-                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>• 360 Marks Weightage</span>
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                {biologyProg}%
-              </span>
-            </div>
-            <div className="progress-track" style={{ height: '7px' }}>
-              <div
-                className="progress-fill progress-fill-biology"
-                style={{ width: `${biologyProg}%` }}
-              />
-            </div>
-          </div>
+      {/* 4. Three Distinct Subject Prep Cards (Physics, Chemistry, Biology) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }} id="subject-cards-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
+          <span
+            style={{
+              fontSize: '12px',
+              fontWeight: 800,
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            }}
+          >
+            Subject Breakdown & Focus
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
+            Tap subject to launch timer ⏱️
+          </span>
         </div>
-      </Card>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Physics Card */}
+          <Card
+            variant="physics"
+            id="home-physics-card"
+            clickable
+            onClick={() => {
+              setSubject('Physics');
+              openTimer({ subject: 'Physics' });
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--subject-physics-bg)',
+                    color: 'var(--subject-physics)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    fontWeight: 800,
+                    flexShrink: 0,
+                  }}
+                >
+                  ⚡
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--subject-physics)', margin: 0 }}>
+                      Physics
+                    </h4>
+                    <span className="badge badge-physics" style={{ fontSize: '10px', padding: '1px 7px' }}>
+                      180 Marks
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                    Mechanics, Optics, Modern Physics & Formulas
+                  </p>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--subject-physics)' }}>
+                  {physicsProg}%
+                </span>
+                <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Today's Goal</div>
+              </div>
+            </div>
+            <div className="progress-track" style={{ height: '7px', marginTop: '4px' }}>
+              <div
+                className="progress-fill"
+                style={{ width: `${physicsProg}%`, background: 'var(--subject-physics)' }}
+              />
+            </div>
+          </Card>
+
+          {/* Chemistry Card */}
+          <Card
+            variant="chemistry"
+            id="home-chemistry-card"
+            clickable
+            onClick={() => {
+              setSubject('Chemistry');
+              openTimer({ subject: 'Chemistry' });
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--subject-chemistry-bg)',
+                    color: 'var(--subject-chemistry)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    fontWeight: 800,
+                    flexShrink: 0,
+                  }}
+                >
+                  ⚗️
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--subject-chemistry)', margin: 0 }}>
+                      Chemistry
+                    </h4>
+                    <span className="badge badge-chemistry" style={{ fontSize: '10px', padding: '1px 7px' }}>
+                      180 Marks
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                    Organic Mechanisms, Inorganic NCERT & Physical
+                  </p>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--subject-chemistry)' }}>
+                  {chemistryProg}%
+                </span>
+                <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Today's Goal</div>
+              </div>
+            </div>
+            <div className="progress-track" style={{ height: '7px', marginTop: '4px' }}>
+              <div
+                className="progress-fill"
+                style={{ width: `${chemistryProg}%`, background: 'var(--subject-chemistry)' }}
+              />
+            </div>
+          </Card>
+
+          {/* Biology Card */}
+          <Card
+            variant="biology"
+            id="home-biology-card"
+            clickable
+            onClick={() => {
+              setSubject('Biology');
+              openTimer({ subject: 'Biology' });
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--subject-biology-bg)',
+                    color: 'var(--subject-biology)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    fontWeight: 800,
+                    flexShrink: 0,
+                  }}
+                >
+                  🧬
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--subject-biology)', margin: 0 }}>
+                      Biology
+                    </h4>
+                    <span className="badge badge-biology" style={{ fontSize: '10px', padding: '1px 7px' }}>
+                      360 Marks 🎯
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                    Botany & Zoology NCERT Line-by-Line & Diagrams
+                  </p>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--subject-biology)' }}>
+                  {biologyProg}%
+                </span>
+                <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Today's Goal</div>
+              </div>
+            </div>
+            <div className="progress-track" style={{ height: '7px', marginTop: '4px' }}>
+              <div
+                className="progress-fill"
+                style={{ width: `${biologyProg}%`, background: 'var(--subject-biology)' }}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
 
       {/* 5. Today's Priorities / Quick Tasks Snippet */}
       <Card
@@ -751,6 +854,24 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
             size="sm"
           >
             Partner & VS
+          </Button>
+          <Button
+            id="action-syllabus-btn"
+            variant="outline"
+            leftIcon={<BookIcon size={16} />}
+            onClick={() => onNavigateTab('syllabus')}
+            size="sm"
+          >
+            Syllabus
+          </Button>
+          <Button
+            id="action-analytics-btn"
+            variant="outline"
+            leftIcon={<BarChartIcon size={16} />}
+            onClick={() => onNavigateTab('analytics')}
+            size="sm"
+          >
+            Analytics
           </Button>
         </div>
       </Card>

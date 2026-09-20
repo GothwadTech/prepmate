@@ -19,9 +19,14 @@ import {
   PartnerUserSearchResult,
   ActivePartnership,
   PartnerProfile,
+  AppNotification,
+  NotificationType,
+  ConflictResolutionLog,
+  QueuedMutation,
 } from '../types';
 import { calculateStreak, formatDateKey, generateDefaultDailyLogsSeed, StreakStats } from '../utils/streakUtils';
 import { partnerService } from '../services/partnerService';
+import { notificationService } from '../services/notificationService';
 
 interface DataContextType {
   tasks: TaskItem[];
@@ -65,6 +70,26 @@ interface DataContextType {
   endCurrentPartnership: () => Promise<void>;
   refreshPartnerData: () => Promise<void>;
   sendPartnerCheer: (message: string) => Promise<void>;
+
+  // Phase 15: Notifications & Reminders
+  notifications: AppNotification[];
+  unreadNotifCount: number;
+  markNotifAsRead: (id: string) => void;
+  markAllNotifsAsRead: () => void;
+  deleteNotification: (id: string) => void;
+  clearAllNotifs: () => void;
+  sendTestNotification: (type: NotificationType) => void;
+  requestNotificationPermission: () => Promise<void>;
+  hasBrowserNotificationPermission: boolean;
+
+  // Phase 16: Offline & Queue Management
+  isSimulatingOffline: boolean;
+  toggleSimulateOffline: () => void;
+  pendingQueueList: QueuedMutation[];
+  conflictLogs: ConflictResolutionLog[];
+  removeQueueItem: (id: string) => void;
+  clearQueue: () => void;
+  clearConflictLogs: () => void;
 }
 
 const defaultTasksSeed: TaskItem[] = [
@@ -192,6 +217,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(syncManager.getStatus());
   const [pendingCount, setPendingCount] = useState<number>(syncManager.getPendingCount());
   const [isOnline, setIsOnline] = useState<boolean>(syncManager.isOnline());
+  const [isSimulatingOffline, setIsSimulatingOffline] = useState<boolean>(() => syncManager.isSimulatingOffline());
+  const [pendingQueueList, setPendingQueueList] = useState<QueuedMutation[]>(() => syncManager.getQueue());
+  const [conflictLogs, setConflictLogs] = useState<ConflictResolutionLog[]>(() => syncManager.getConflictLogs());
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => notificationService.getNotifications());
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(() => notificationService.getUnreadCount());
+  const [hasBrowserNotificationPermission, setHasBrowserNotificationPermission] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+  });
+
+  // Phase 15: Subscribe to Notification Service
+  useEffect(() => {
+    const unsubNotif = notificationService.subscribe((list) => {
+      setNotifications(list);
+      setUnreadNotifCount(list.filter((n) => !n.read).length);
+    });
+    return unsubNotif;
+  }, []);
+
+  // Phase 16: Subscribe to Sync Manager updates
+  useEffect(() => {
+    const unsubSync = syncManager.subscribe((status, count) => {
+      setSyncStatus(status);
+      setPendingCount(count);
+      setIsOnline(syncManager.isOnline());
+      setIsSimulatingOffline(syncManager.isSimulatingOffline());
+      setPendingQueueList(syncManager.getQueue());
+      setConflictLogs(syncManager.getConflictLogs());
+    });
+    return unsubSync;
+  }, []);
 
   const [stats, setStats] = useState<UserStats>({
     todayStudyMinutes: 210,
@@ -822,6 +877,74 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast('Everything up to date!', 'success');
   };
 
+  // Phase 15: Notification operations
+  const markNotifAsRead = useCallback((id: string) => {
+    notificationService.markAsRead(id);
+  }, []);
+
+  const markAllNotifsAsRead = useCallback(() => {
+    notificationService.markAllAsRead();
+  }, []);
+
+  const deleteNotification = useCallback((id: string) => {
+    notificationService.deleteNotification(id);
+  }, []);
+
+  const clearAllNotifs = useCallback(() => {
+    notificationService.clearAll();
+  }, []);
+
+  const sendTestNotification = useCallback((type: NotificationType) => {
+    notificationService.sendTestNotification(type);
+    showToast(`Test reminder sent: ${type}`, 'info');
+  }, [showToast]);
+
+  const requestNotificationPermission = useCallback(async () => {
+    const perm = await notificationService.requestNotificationPermission();
+    setHasBrowserNotificationPermission(perm === 'granted');
+    if (perm === 'granted') {
+      showToast('Notifications enabled! Daily 7:00 AM kickoff & streak warnings active.', 'success');
+    } else {
+      showToast('Browser notifications not enabled.', 'info');
+    }
+  }, [showToast]);
+
+  // Phase 16: Offline & Queue Management operations
+  const toggleSimulateOffline = useCallback(() => {
+    const next = !syncManager.isSimulatingOffline();
+    syncManager.setSimulateOffline(next);
+    setIsSimulatingOffline(next);
+    setIsOnline(syncManager.isOnline());
+    if (next) {
+      showToast('Simulated Offline Mode active. All changes queued locally.', 'info');
+    } else {
+      showToast('Online mode restored. Syncing pending mutations...', 'success');
+    }
+  }, [showToast]);
+
+  const removeQueueItem = useCallback((id: string) => {
+    syncManager.removeFromQueue(id);
+    setPendingQueueList(syncManager.getQueue());
+    showToast('Queued mutation removed.', 'info');
+  }, [showToast]);
+
+  const clearQueue = useCallback(() => {
+    syncManager.clearQueue();
+    setPendingQueueList([]);
+    showToast('Offline queue cleared.', 'info');
+  }, [showToast]);
+
+  const clearConflictLogs = useCallback(() => {
+    syncManager.clearConflictLogs();
+    setConflictLogs([]);
+    showToast('Conflict log history cleared.', 'info');
+  }, [showToast]);
+
+  // Phase 15: Check and trigger real-time daily study reminders & streak warnings
+  useEffect(() => {
+    notificationService.checkAndGenerateReminders(stats, activePartner);
+  }, [stats.todayStudyMinutes, stats.tasksCompletedToday, stats.streakDays, activePartner?.isStudyingNow]);
+
   return (
     <DataContext.Provider
       value={{
@@ -862,6 +985,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         endCurrentPartnership,
         refreshPartnerData,
         sendPartnerCheer,
+
+        // Phase 15
+        notifications,
+        unreadNotifCount,
+        markNotifAsRead,
+        markAllNotifsAsRead,
+        deleteNotification,
+        clearAllNotifs,
+        sendTestNotification,
+        requestNotificationPermission,
+        hasBrowserNotificationPermission,
+
+        // Phase 16
+        isSimulatingOffline,
+        toggleSimulateOffline,
+        pendingQueueList,
+        conflictLogs,
+        removeQueueItem,
+        clearQueue,
+        clearConflictLogs,
       }}
     >
       {children}

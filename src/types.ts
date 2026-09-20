@@ -3,7 +3,7 @@
  * Project by Gothwad Tech for NEET Aspirants
  */
 
-export type AppTab = 'home' | 'tasks' | 'goals' | 'partners' | 'profile';
+export type AppTab = 'home' | 'tasks' | 'goals' | 'partners' | 'syllabus' | 'profile' | 'analytics';
 
 export type AppTheme = 'light' | 'dark';
 
@@ -275,5 +275,58 @@ export interface ScoreBreakdown {
   level: number;
   levelTitle: string;
   xpPoints: number;
+}
+
+// Phase 14: Profile & Settings types
+export interface AchievementBadge {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  category: 'streak' | 'study_hours' | 'tasks' | 'subject' | 'partner' | 'milestone';
+  unlocked: boolean;
+  unlockedAt?: string;
+  currentProgress?: number;
+  targetProgress?: number;
+  progressLabel?: string;
+  rarity?: 'Common' | 'Rare' | 'Epic' | 'Legendary';
+}
+
+export interface UserSettings {
+  theme: AppTheme;
+  dailyGoalHours: number; // e.g. 4, 6, 8, 10
+  dreamCollege?: string; // e.g. 'AIIMS New Delhi'
+  notifications: {
+    morningReminder: boolean;
+    streakWarning: boolean;
+    partnerAlerts: boolean;
+    dailySummary: boolean;
+  };
+}
+
+// Phase 15: Notifications & Reminders
+export type NotificationType = 'daily_reminder' | 'streak_warning' | 'partner_activity' | 'challenge' | 'system';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: string; // ISO string
+  read: boolean;
+  actionTab?: AppTab;
+  actionLabel?: string;
+  icon?: string;
+}
+
+// Phase 16: Offline Sync & Conflict Resolution
+export interface ConflictResolutionLog {
+  id: string;
+  collection: 'tasks' | 'goals' | 'daily_logs';
+  docId: string;
+  docTitle: string;
+  resolvedAt: string;
+  resolutionStrategy: 'last_write_wins' | 'smart_merge' | 'client_wins';
+  details: string;
 }
 

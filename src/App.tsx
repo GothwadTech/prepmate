@@ -9,11 +9,17 @@ import { TasksPage } from './pages/TasksPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { PartnersPage } from './pages/PartnersPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { SyllabusPage } from './pages/SyllabusPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { ToastContainer } from './components/common/Toast';
 import { TimerModal } from './components/timer/TimerModal';
 import { FloatingTimerBar } from './components/timer/FloatingTimerBar';
+import { OfflineBanner } from './components/layout/OfflineBanner';
+import { NotificationCenterModal } from './components/notification/NotificationCenterModal';
+import { SyncQueueInspectorModal } from './components/sync/SyncQueueInspectorModal';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AppTab, AppTheme, UserStats } from './types';
 
 function MainApp() {
@@ -24,6 +30,7 @@ function MainApp() {
     stats,
     syncStatus,
     pendingCount,
+    isOnline,
     syncNow,
     addTask,
     toggleTask,
@@ -34,9 +41,29 @@ function MainApp() {
     deleteGoal,
     updateGoalItem,
     updateStats,
+    // Phase 15
+    notifications,
+    unreadNotifCount,
+    markNotifAsRead,
+    markAllNotifsAsRead,
+    deleteNotification,
+    clearAllNotifs,
+    sendTestNotification,
+    requestNotificationPermission,
+    hasBrowserNotificationPermission,
+    // Phase 16
+    isSimulatingOffline,
+    toggleSimulateOffline,
+    pendingQueueList,
+    conflictLogs,
+    removeQueueItem,
+    clearQueue,
+    clearConflictLogs,
   } = useData();
 
   const [authScreen, setAuthScreen] = useState<'login' | 'signup'>('login');
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   // Theme state persisted in localStorage
   const [theme, setTheme] = useState<AppTheme>(() => {
@@ -71,8 +98,12 @@ function MainApp() {
         return 'Goals Tracker';
       case 'partners':
         return 'Partners';
+      case 'syllabus':
+        return 'NEET Syllabus';
       case 'profile':
         return 'Profile';
+      case 'analytics':
+        return 'Study Analytics';
     }
   };
 
@@ -162,12 +193,24 @@ function MainApp() {
       <div className="app-container" id="prepmate-app-container">
         {/* Sticky Google-Style Top Header */}
         <Header
-          theme={theme}
-          onToggleTheme={handleToggleTheme}
-          activeTabTitle={getTabTitle(activeTab)}
+          onOpenProfile={() => setActiveTab('profile')}
+          isProfileActive={activeTab === 'profile'}
+          onOpenNotifications={() => setIsNotifModalOpen(true)}
+          unreadNotifCount={unreadNotifCount}
+          onOpenSyncQueue={() => setIsSyncModalOpen(true)}
           syncStatus={syncStatus}
+          isOnline={isOnline}
           pendingCount={pendingCount}
-          onSyncClick={syncNow}
+        />
+
+        {/* Real-time Offline & Simulation Alert Banner (Phase 16) */}
+        <OfflineBanner
+          isOnline={isOnline}
+          isSimulatingOffline={isSimulatingOffline}
+          pendingCount={pendingCount}
+          onOpenQueueInspector={() => setIsSyncModalOpen(true)}
+          onToggleSimulateOffline={toggleSimulateOffline}
+          onSyncNow={syncNow}
         />
 
         {/* Dynamic Page Content */}
@@ -198,13 +241,25 @@ function MainApp() {
 
           {activeTab === 'partners' && <PartnersPage stats={stats} />}
 
+          {activeTab === 'syllabus' && (
+            <SyllabusPage onNavigateToTasks={() => setActiveTab('tasks')} />
+          )}
+
           {activeTab === 'profile' && (
             <ProfilePage
               theme={theme}
               onToggleTheme={handleToggleTheme}
               stats={stats}
               onUpdateStats={updateStats}
+              onBack={() => setActiveTab('home')}
+              onNavigateToAnalytics={() => setActiveTab('analytics')}
+              onOpenSyncInspector={() => setIsSyncModalOpen(true)}
+              onOpenNotifications={() => setIsNotifModalOpen(true)}
             />
+          )}
+
+          {activeTab === 'analytics' && (
+            <AnalyticsPage onBack={() => setActiveTab('home')} />
           )}
         </main>
 
@@ -217,6 +272,41 @@ function MainApp() {
         {/* Full Study Timer Modal / Sheet */}
         <TimerModal />
 
+        {/* Notification Center Modal (Phase 15) */}
+        <NotificationCenterModal
+          isOpen={isNotifModalOpen}
+          onClose={() => setIsNotifModalOpen(false)}
+          notifications={notifications}
+          unreadCount={unreadNotifCount}
+          onMarkAsRead={markNotifAsRead}
+          onMarkAllAsRead={markAllNotifsAsRead}
+          onDeleteNotification={deleteNotification}
+          onClearAll={clearAllNotifs}
+          onNavigateTab={(tab) => {
+            setActiveTab(tab);
+            setIsNotifModalOpen(false);
+          }}
+          onSendTestNotification={sendTestNotification}
+          onRequestPermission={requestNotificationPermission}
+          hasBrowserPermission={hasBrowserNotificationPermission}
+        />
+
+        {/* Sync Queue & Conflict Resolution Inspector Modal (Phase 16) */}
+        <SyncQueueInspectorModal
+          isOpen={isSyncModalOpen}
+          onClose={() => setIsSyncModalOpen(false)}
+          syncStatus={syncStatus}
+          isOnline={isOnline}
+          isSimulatingOffline={isSimulatingOffline}
+          onToggleSimulateOffline={toggleSimulateOffline}
+          pendingQueue={pendingQueueList}
+          conflictLogs={conflictLogs}
+          onRemoveQueueItem={removeQueueItem}
+          onClearQueue={clearQueue}
+          onClearConflictLogs={clearConflictLogs}
+          onSyncNow={syncNow}
+        />
+
         {/* Global Floating Toast Notifications */}
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
@@ -226,12 +316,14 @@ function MainApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <DataProvider>
-        <TimerProvider>
-          <MainApp />
-        </TimerProvider>
-      </DataProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <DataProvider>
+          <TimerProvider>
+            <MainApp />
+          </TimerProvider>
+        </DataProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

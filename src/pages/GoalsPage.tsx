@@ -3,6 +3,7 @@ import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Input } from '../components/common/Input';
+import { EmptyState } from '../components/common/EmptyState';
 import {
   GoalsIcon,
   PlusIcon,
@@ -233,15 +234,15 @@ export const GoalsPage: React.FC<GoalsPageProps> = ({
   return (
     <div id="goals-tracker-page" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* 1. Target Aim & Progress Overview Banner */}
-      <div className="banner-box" id="neet-target-banner">
+      <Card variant="hero" id="neet-target-banner">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>
                 🎯 Target NEET 2026: 680+ Aim
               </span>
               <span className="badge badge-primary" style={{ fontSize: '10px', padding: '2px 8px' }}>
-                Phase 7 Active
+                🩺 AIIMS Target
               </span>
             </div>
             <h2 style={{ fontSize: '20px', fontWeight: 800, marginTop: '4px', letterSpacing: '-0.01em' }}>
@@ -294,7 +295,7 @@ export const GoalsPage: React.FC<GoalsPageProps> = ({
             <span className="stat-label" style={{ fontSize: '11px' }}>Avg. Progress</span>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 2. Goal Filters & Tab Navigation */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -413,49 +414,29 @@ export const GoalsPage: React.FC<GoalsPageProps> = ({
       {/* 3. Goals List Container */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} id="goals-list-container">
         {filteredGoals.length === 0 ? (
-          <Card id="empty-goals-card">
-            <div style={{ textAlign: 'center', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '50%',
-                  background: 'var(--surface-variant)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--text-secondary)',
-                }}
-              >
-                <GoalsIcon size={24} />
-              </div>
-              <h4 style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>
-                {statusTab === 'completed'
-                  ? 'No completed goals yet'
-                  : searchQuery
-                  ? 'No goals match your search'
-                  : 'No active goals in this view'}
-              </h4>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, maxWidth: '320px' }}>
-                {statusTab === 'completed'
-                  ? 'Keep studying! Apne active goals ko complete karein aur yahan unka track record dekhein.'
-                  : 'Choose a pre-made NEET syllabus goal template below or create your own target chapter goal.'}
-              </p>
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<PlusIcon size={16} />}
-                onClick={() => handleOpenNewModal()}
-                style={{ marginTop: '6px' }}
-              >
-                Create Study Goal
-              </Button>
-            </div>
-          </Card>
+          <EmptyState
+            icon={<GoalsIcon size={28} color="var(--primary)" />}
+            badge="Goals Milestone"
+            title={
+              statusTab === 'completed'
+                ? 'No completed goals yet'
+                : searchQuery
+                ? 'No goals match your search'
+                : 'No active goals in this view'
+            }
+            description={
+              statusTab === 'completed'
+                ? 'Keep studying! Apne active goals ko complete karein aur yahan unka track record dekhein.'
+                : 'Choose a pre-made NEET syllabus goal template below or create your own target chapter goal.'
+            }
+            actionText="+ Create Study Goal"
+            onAction={() => handleOpenNewModal()}
+          />
         ) : (
           filteredGoals.map((goal) => {
             const isCompleted = goal.completed || goal.progressPercent >= 100;
             const weightage = getChapterWeightage(goal.subject, goal.chapter);
+            const subjectIcon = goal.subject === 'Physics' ? '⚡' : goal.subject === 'Chemistry' ? '⚗️' : '🧬';
 
             // Progress bar color based on subject
             const subjectColor =
@@ -468,11 +449,10 @@ export const GoalsPage: React.FC<GoalsPageProps> = ({
             return (
               <div
                 key={goal.id}
-                className={`card goal-card ${isCompleted ? 'completed' : ''}`}
+                className={`card card-${goal.subject.toLowerCase()} goal-card ${isCompleted ? 'completed' : ''}`}
                 id={`goal-card-${goal.id}`}
                 style={{
                   padding: '14px 16px',
-                  borderLeft: `4px solid ${subjectColor}`,
                 }}
               >
                 {/* Header Row: Subject Badge + High Weightage + Actions */}
@@ -487,7 +467,7 @@ export const GoalsPage: React.FC<GoalsPageProps> = ({
                           : 'biology'
                       }
                     >
-                      {goal.subject}
+                      {subjectIcon} {goal.subject}
                     </Badge>
 
                     {weightage === 'High' && (

@@ -241,45 +241,49 @@
 
 ### Analytics + Profile (Phase 13-15)
 
-**Phase 13: Analytics**
+**Phase 13: Analytics** [COMPLETED]
 - Weekly / Monthly report
 - Subject breakdown (pie/bar chart - pure CSS)
 - Score trend line chart (pure SVG)
 - Study pattern insights
 
-**Phase 14: Profile + Settings**
+**Phase 14: Profile + Settings** [COMPLETED]
 - Profile page (stats, badges, level, XP)
 - Edit profile
 - Settings (theme toggle, daily goal hours, notifications)
 - Achievement badges
 - Logout
 
-**Phase 15: Notifications + Reminders**
-- Daily study reminder
-- Streak warning
-- Partner activity notification
+**Phase 15: Notifications + Reminders** [COMPLETED]
+- Daily study reminder (7:00 AM Kickoff)
+- Streak warning (9:00 PM evening alert)
+- Partner activity notification (cheers & live study status)
+- In-app notification center modal with unread badge counter
+- Browser native Notification API integration
 
 ### Polish + Deploy (Phase 16-18)
 
-**Phase 16: Offline + Sync**
-- Full offline mode
-- Background sync when online
-- Queue management
-- Conflict resolution
+**Phase 16: Offline + Sync** [COMPLETED]
+- Full offline mode with persistent local queue
+- Background sync when online (automatic pulse + reconnect listener)
+- Queue management & inspector modal (with manual discard/retry)
+- Conflict resolution (LWW timestamping & smart-merge logging)
+- Simulated offline mode testing toggle
 
-**Phase 17: Performance + Polish**
-- Animations + micro-interactions
-- Loading skeletons
-- Empty states
-- Error boundaries
-- Code splitting + lazy loading
+**Phase 17: Performance + Polish** [COMPLETED]
+- [x] Card variant design system (`hero`, `physics`, `chemistry`, `biology`, `gold`, `glass`, `glow`)
+- [x] Smooth micro-interactions & lift animations with theme CSS variables
+- [x] Loading skeletons (`Skeleton.tsx` for tasks, goals, partner cards, stats)
+- [x] Standardized empty states with action triggers (`EmptyState.tsx`)
+- [x] Global Error Boundary with friendly recovery fallback UI (`ErrorBoundary.tsx`)
+- [x] Code splitting & manual chunking in Vite for faster initial paint
 
-**Phase 18: Deploy + Security**
-- Firebase security rules
-- Firestore indexes
-- Firebase Hosting deploy
-- Final testing
-- Monitoring setup
+**Phase 18: Deploy + Security** [COMPLETED]
+- [x] Production-hardened Firestore security rules (`firestore.rules` covering users, tasks, goals, partnerships, requests, logs, notifications, challenges)
+- [x] Firestore composite indexes configuration (`firestore.indexes.json`)
+- [x] Firebase deployment configuration (`firebase.json` for hosting, rules, and caching headers)
+- [x] Complete build and type verification passing (`compile_applet` & `lint_applet` clean)
+- [x] Offline PWA service worker & manifest verified
 
 ---
 
