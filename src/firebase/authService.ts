@@ -5,94 +5,19 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification,
   updateProfile,
-  User as FirebaseUser,
 } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from './config';
 import { UserProfile } from '../types';
+import { SignUpData, LOCAL_STORAGE_USER_KEY, sanitizeForFirestore } from './authTypes';
+import { findUserByIdentifier, resolveIdentifierToEmail, saveToRegisteredUsersList } from './userLookup';
 
-export interface SignUpData {
-  email: string;
-  password: string;
-  name: string;
-  username: string;
-  targetYear: string;
-  targetScore: number;
-}
-
-const LOCAL_STORAGE_USER_KEY = 'prepmate_auth_user_active';
-
-/**
- * Clean data so undefined properties are never passed to Firestore setDoc/updateDoc
- */
-function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
-  const clean: any = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v !== undefined) {
-      clean[k] = v;
-    }
-  }
-  return clean;
-}
+export type { SignUpData };
+export { LOCAL_STORAGE_USER_KEY, sanitizeForFirestore };
 
 export const authService = {
-  /**
-   * Search for an existing user in Firestore by email or username
-   */
-  async findUserByIdentifier(identifier: string): Promise<UserProfile | null> {
-    if (!isFirebaseConfigured || !db) return null;
-    const clean = identifier.trim();
-    if (!clean) return null;
-
-    try {
-      const usersRef = collection(db, 'users');
-      const isEmail = clean.includes('@');
-
-      if (isEmail) {
-        const cleanEmail = clean.toLowerCase();
-        const qEmail = query(usersRef, where('email', '==', cleanEmail));
-        const snapEmail = await getDocs(qEmail);
-        if (!snapEmail.empty) {
-          return snapEmail.docs[0].data() as UserProfile;
-        }
-
-        // Check exact match fallback
-        if (clean !== cleanEmail) {
-          const qExact = query(usersRef, where('email', '==', clean));
-          const snapExact = await getDocs(qExact);
-          if (!snapExact.empty) {
-            return snapExact.docs[0].data() as UserProfile;
-          }
-        }
-        return null;
-      } else {
-        const cleanUsername = clean.replace(/^@/, '').toLowerCase();
-        const qUser = query(usersRef, where('username', '==', cleanUsername));
-        const snapUser = await getDocs(qUser);
-        if (!snapUser.empty) {
-          return snapUser.docs[0].data() as UserProfile;
-        }
-        return null;
-      }
-    } catch (err) {
-      console.warn('Error querying Firestore for user identifier:', err);
-      return null;
-    }
-  },
-
-  /**
-   * Resolve an identifier (email, username, or phone) to the user's registered email
-   */
-  async resolveIdentifierToEmail(identifier: string): Promise<string> {
-    const cleanId = identifier.trim();
-    if (!cleanId.includes('@')) {
-      const user = await this.findUserByIdentifier(cleanId);
-      if (user?.email) {
-        return user.email;
-      }
-    }
-    return cleanId;
-  },
+  findUserByIdentifier,
+  resolveIdentifierToEmail,
 
   /**
    * Register with Email and Password
@@ -111,13 +36,14 @@ export const authService = {
         targetScore: Number(data.targetScore) || 685,
         createdAt: new Date().toISOString(),
       };
+      saveToRegisteredUsersList(demoProfile);
       localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(demoProfile));
       localStorage.setItem('prepmate_auth_user_demo', JSON.stringify(demoProfile));
       return demoProfile;
     }
 
     // Verify username availability before creating account
-    const existingWithUsername = await this.findUserByIdentifier(cleanUsername);
+    const existingWithUsername = await findUserByIdentifier(cleanUsername);
     if (existingWithUsername) {
       const err: any = new Error('This username is already taken. Please choose another username.');
       err.code = 'auth/username-already-in-use';
@@ -140,7 +66,7 @@ export const authService = {
       console.warn('Could not trigger verification email:', verifErr);
     }
 
-    // 4. Create profile document in Firestore (strictly sanitizing undefined values)
+    // 4. Create profile document in Firestore
     const rawProfile: UserProfile = {
       uid: user.uid,
       email: cleanEmail,
@@ -153,6 +79,7 @@ export const authService = {
     };
 
     const userProfile = sanitizeForFirestore(rawProfile);
+    saveToRegisteredUsersList(userProfile);
     const userRef = doc(db, 'users', user.uid);
     await setDoc(userRef, userProfile);
 
@@ -192,8 +119,7 @@ export const authService = {
       const saved = localStorage.getItem('prepmate_auth_user_demo') || localStorage.getItem(LOCAL_STORAGE_USER_KEY);
       if (saved) {
         try {
-          const parsed = JSON.parse(saved);
-          return parsed;
+          return JSON.parse(saved);
         } catch {
           // Fall through to create profile
         }
@@ -217,7 +143,7 @@ export const authService = {
 
     // If identifier is username, resolve and verify existence in database first
     if (!clean.includes('@')) {
-      const user = await this.findUserByIdentifier(clean);
+      const user = await findUserByIdentifier(clean);
       if (!user || !user.email) {
         const err: any = new Error('Incorrect email/username or password');
         err.code = 'auth/invalid-credential';
@@ -233,12 +159,13 @@ export const authService = {
       await signOut(auth);
       const err: any = new Error('Email not verified. Please verify your email.');
       err.code = 'auth/email-not-verified';
-      err.email = emailToUse;
+      (err as any).email = emailToUse;
       throw err;
     }
 
     const profile = await this.getUserProfile(userCredential.user.uid);
     if (profile) {
+      saveToRegisteredUsersList(profile);
       localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(profile));
       return profile;
     }
@@ -254,6 +181,7 @@ export const authService = {
       createdAt: new Date().toISOString(),
       photoURL: userCredential.user.photoURL || '',
     });
+    saveToRegisteredUsersList(fallbackProfile);
     localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(fallbackProfile));
     return fallbackProfile;
   },
@@ -270,9 +198,7 @@ export const authService = {
   },
 
   /**
-   * Send Password Reset Email
-   * If identifier is an email: invokes standard Firebase Auth reset directly (or resolves via Firestore).
-   * If identifier is a username: resolves the registered email from Firestore first.
+   * Send Password Reset Email with strict user existence check
    */
   async sendPasswordReset(identifier: string): Promise<{ email: string }> {
     const clean = identifier.trim();
@@ -281,38 +207,46 @@ export const authService = {
     }
 
     if (!isFirebaseConfigured || !auth) {
-      return { email: clean.includes('@') ? clean : `${clean}@example.com` };
+      const demoUser = await findUserByIdentifier(clean);
+      if (!demoUser) {
+        const err: any = new Error(
+          clean.includes('@')
+            ? 'No account found with this email in Firebase. Please check your email or register.'
+            : 'No account found with this username. Please check your username or register.'
+        );
+        (err as any).code = 'auth/user-not-found';
+        throw err;
+      }
+      return { email: demoUser?.email || clean };
     }
 
     const isEmail = clean.includes('@');
-    let emailToSend = clean;
+    const existingUser = await findUserByIdentifier(clean);
 
-    if (isEmail) {
-      emailToSend = clean.toLowerCase();
-    } else {
-      // Identifier is a username, resolve from Firestore
-      const existingUser = await this.findUserByIdentifier(clean);
-      if (!existingUser || !existingUser.email) {
-        const err: any = new Error('No account found with this username.');
-        err.code = 'auth/user-not-found';
-        throw err;
-      }
-      emailToSend = existingUser.email;
+    // If user is not found in Firestore or Firebase Auth, reject immediately!
+    if (!existingUser) {
+      const err: any = new Error(
+        isEmail
+          ? 'No account found with this email in Firebase. Please check your email or register.'
+          : 'No account found with this username. Please check your username or register.'
+      );
+      (err as any).code = 'auth/user-not-found';
+      throw err;
     }
 
-    // Call Firebase Auth's standard password reset email directly
+    const emailToSend = (existingUser.email || clean).toLowerCase().trim();
+
     try {
       await sendPasswordResetEmail(auth, emailToSend);
     } catch (firebaseErr: any) {
-      // Check if it's user-not-found from Firebase Auth
       const code = String(firebaseErr.code || '').toLowerCase();
       if (code.includes('user-not-found')) {
         const err: any = new Error(
           isEmail
-            ? 'No account found with this email address.'
+            ? 'No account found with this email in Firebase.'
             : 'No account found with this username.'
         );
-        err.code = 'auth/user-not-found';
+        (err as any).code = 'auth/user-not-found';
         throw err;
       }
       throw firebaseErr;

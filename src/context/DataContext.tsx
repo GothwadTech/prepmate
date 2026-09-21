@@ -1,155 +1,24 @@
 /**
- * Prepmate - Data Context (Phase 3)
- * Unified state management combining Firestore, Cache Layer, and Offline Queue.
+ * Prepmate - Data Context
+ * Modular unified state management combining Firestore, Cache Layer, and Offline Queue.
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { syncManager } from '../services/syncManager';
-import { cacheService } from '../services/cacheService';
-import {
-  TaskItem,
-  GoalItem,
-  UserStats,
-  UserProfile,
-  SyncStatus,
-  StudySession,
-  DailyStudyLog,
-  PartnerRequest,
-  PartnerUserSearchResult,
-  ActivePartnership,
-  PartnerProfile,
-  AppNotification,
-  NotificationType,
-  ConflictResolutionLog,
-  QueuedMutation,
-} from '../types';
-import { calculateStreak, formatDateKey, generateDefaultDailyLogsSeed, StreakStats } from '../utils/streakUtils';
-import { partnerService } from '../services/partnerService';
-import { notificationService } from '../services/notificationService';
+import { UserStats } from '../types';
+import { DataContextType } from './dataContextTypes';
+import { useQueueIntegration } from './useQueueIntegration';
+import { usePartnerIntegration } from './usePartnerIntegration';
+import { useNotificationIntegration } from './useNotificationIntegration';
+import { useStudyOperations } from './useStudyOperations';
 
-interface DataContextType {
-  tasks: TaskItem[];
-  goals: GoalItem[];
-  sessions: StudySession[];
-  dailyLogs: DailyStudyLog[];
-  streakStats: StreakStats;
-  stats: UserStats;
-  syncStatus: SyncStatus;
-  isOnline: boolean;
-  pendingCount: number;
-  loadingData: boolean;
-  syncNow: () => Promise<void>;
-  addTask: (data: Omit<TaskItem, 'id' | 'completed' | 'completedCount' | 'date'> & { date?: string }) => Promise<void>;
-  toggleTask: (id: string) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
-  updateTaskItem: (id: string, updates: Partial<TaskItem>) => Promise<void>;
-  addGoal: (data: Omit<GoalItem, 'id' | 'completed' | 'progressPercent'> & { progressPercent?: number }) => Promise<void>;
-  toggleGoal: (id: string) => Promise<void>;
-  deleteGoal: (id: string) => Promise<void>;
-  updateGoalItem: (id: string, updates: Partial<GoalItem>) => Promise<void>;
-  logStudySession: (session: Omit<StudySession, 'id' | 'completedAt' | 'date'> & { date?: string }) => Promise<void>;
-  deleteSession: (id: string) => Promise<void>;
-  updateStats: (newStats: Partial<UserStats>) => void;
-  saveDailyReflection: (date: string, notes: string) => Promise<void>;
-  useStreakShield: () => Promise<boolean>;
-  // Phase 9 Partner system
-  receivedRequests: PartnerRequest[];
-  sentRequests: PartnerRequest[];
-  pendingPartnerRequestsCount: number;
-  activePartnership: ActivePartnership | null;
-  activePartner: PartnerProfile | null;
-  searchPartners: (q: string) => Promise<PartnerUserSearchResult[]>;
-  sendPartnerRequest: (
-    targetUser: { uid?: string; username: string; displayName?: string; targetScore?: number; targetYear?: string; avatarBg?: string },
-    cheerMessage?: string
-  ) => Promise<void>;
-  acceptPartnerRequest: (requestId: string) => Promise<void>;
-  rejectPartnerRequest: (requestId: string) => Promise<void>;
-  cancelPartnerRequest: (requestId: string) => Promise<void>;
-  endCurrentPartnership: () => Promise<void>;
-  refreshPartnerData: () => Promise<void>;
-  sendPartnerCheer: (message: string) => Promise<void>;
-
-  // Phase 15: Notifications & Reminders
-  notifications: AppNotification[];
-  unreadNotifCount: number;
-  markNotifAsRead: (id: string) => void;
-  markAllNotifsAsRead: () => void;
-  deleteNotification: (id: string) => void;
-  clearAllNotifs: () => void;
-  sendTestNotification: (type: NotificationType) => void;
-  requestNotificationPermission: () => Promise<void>;
-  hasBrowserNotificationPermission: boolean;
-
-  // Phase 16: Offline & Queue Management
-  isSimulatingOffline: boolean;
-  toggleSimulateOffline: () => void;
-  pendingQueueList: QueuedMutation[];
-  conflictLogs: ConflictResolutionLog[];
-  removeQueueItem: (id: string) => void;
-  clearQueue: () => void;
-  clearConflictLogs: () => void;
-}
-
-const defaultTasksSeed: TaskItem[] = [];
-
-const defaultGoalsSeed: GoalItem[] = [];
-
-const defaultSessionsSeed: StudySession[] = [];
+export type { DataContextType };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, showToast } = useAuth();
   const userId = user?.uid || 'guest-aspirant';
-
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [goals, setGoals] = useState<GoalItem[]>([]);
-  const [dailyLogs, setDailyLogs] = useState<DailyStudyLog[]>([]);
-  const [sessions, setSessions] = useState<StudySession[]>(() => {
-    try {
-      const cached = localStorage.getItem(`prepmate_sessions_${userId}`);
-      if (cached) return JSON.parse(cached);
-    } catch (e) {
-      console.warn(e);
-    }
-    return [];
-  });
-  const [loadingData, setLoadingData] = useState<boolean>(true);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>(syncManager.getStatus());
-  const [pendingCount, setPendingCount] = useState<number>(syncManager.getPendingCount());
-  const [isOnline, setIsOnline] = useState<boolean>(syncManager.isOnline());
-  const [isSimulatingOffline, setIsSimulatingOffline] = useState<boolean>(() => syncManager.isSimulatingOffline());
-  const [pendingQueueList, setPendingQueueList] = useState<QueuedMutation[]>(() => syncManager.getQueue());
-  const [conflictLogs, setConflictLogs] = useState<ConflictResolutionLog[]>(() => syncManager.getConflictLogs());
-  const [notifications, setNotifications] = useState<AppNotification[]>(() => notificationService.getNotifications());
-  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(() => notificationService.getUnreadCount());
-  const [hasBrowserNotificationPermission, setHasBrowserNotificationPermission] = useState<boolean>(() => {
-    return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
-  });
-
-  // Phase 15: Subscribe to Notification Service
-  useEffect(() => {
-    const unsubNotif = notificationService.subscribe((list) => {
-      setNotifications(list);
-      setUnreadNotifCount(list.filter((n) => !n.read).length);
-    });
-    return unsubNotif;
-  }, []);
-
-  // Phase 16: Subscribe to Sync Manager updates
-  useEffect(() => {
-    const unsubSync = syncManager.subscribe((status, count) => {
-      setSyncStatus(status);
-      setPendingCount(count);
-      setIsOnline(syncManager.isOnline());
-      setIsSimulatingOffline(syncManager.isSimulatingOffline());
-      setPendingQueueList(syncManager.getQueue());
-      setConflictLogs(syncManager.getConflictLogs());
-    });
-    return unsubSync;
-  }, []);
 
   const [stats, setStats] = useState<UserStats>({
     todayStudyMinutes: 0,
@@ -166,748 +35,103 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     biologyProgress: 0,
   });
 
-  // Phase 9 Partner system state
-  const [receivedRequests, setReceivedRequests] = useState<PartnerRequest[]>([]);
-  const [sentRequests, setSentRequests] = useState<PartnerRequest[]>([]);
-  const [activePartnership, setActivePartnership] = useState<ActivePartnership | null>(() => {
-    return partnerService.getLocalPartnership();
-  });
-
-  const activePartner = activePartnership?.partner || null;
-  const pendingPartnerRequestsCount = receivedRequests.length;
-
-  const currentUserProfile = React.useMemo<UserProfile>(() => {
-    return (
-      user || {
-        uid: userId,
-        email: '',
-        displayName: 'You (Aspirant)',
-        username: 'you',
-        targetYear: stats.targetYear || '2026',
-        targetScore: stats.targetScore || 685,
-        createdAt: new Date().toISOString(),
-      }
-    );
-  }, [user, userId, stats.targetYear, stats.targetScore]);
-
-  // Load partner data
-  const refreshPartnerData = useCallback(async () => {
-    try {
-      const p = partnerService.getLocalPartnership();
-      setActivePartnership(p);
-      const reqs = await partnerService.fetchRequests(userId, currentUserProfile.username);
-      setReceivedRequests(reqs.received);
-      setSentRequests(reqs.sent);
-    } catch (e) {
-      console.warn('Failed to load partner data:', e);
+  // Keep target year and score synced with user profile
+  useEffect(() => {
+    if (user?.targetYear || user?.targetScore) {
+      setStats((prev) => ({
+        ...prev,
+        targetYear: user.targetYear || prev.targetYear,
+        targetScore: user.targetScore || prev.targetScore,
+      }));
     }
-  }, [userId, currentUserProfile.username]);
-
-  useEffect(() => {
-    refreshPartnerData();
-  }, [refreshPartnerData]);
-
-  // Phase 10: Real-time Firestore listener for active partnership
-  useEffect(() => {
-    if (!activePartnership?.id) return;
-
-    const unsubscribe = partnerService.subscribeToPartnership(
-      activePartnership.id,
-      (updatedPartnership) => {
-        if (updatedPartnership) {
-          setActivePartnership(updatedPartnership);
-        } else {
-          setActivePartnership(null);
-        }
-      }
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, [activePartnership?.id]);
-
-  // Phase 10: Broadcast study stats to active partner
-  useEffect(() => {
-    if (!activePartnership?.id) return;
-    const studyHrs = Number((stats.todayStudyMinutes / 60).toFixed(1));
-    partnerService.syncMyActivity(activePartnership.id, {
-      todayStudyHours: studyHrs,
-      todayTasksCompleted: stats.tasksCompletedToday,
-      streakDays: stats.streakDays,
-      isStudyingNow: false,
-    });
-  }, [activePartnership?.id, stats.todayStudyMinutes, stats.tasksCompletedToday, stats.streakDays]);
-
-  // Calculate streak stats dynamically from dailyLogs
-  const streakStats = React.useMemo(() => {
-    return calculateStreak(dailyLogs, formatDateKey(new Date()), stats.streakShields ?? 1);
-  }, [dailyLogs, stats.streakShields]);
-
-  // Keep stats in sync with calculated streak
-  useEffect(() => {
-    setStats((prev) => ({
-      ...prev,
-      streakDays: streakStats.currentStreak,
-      longestStreakDays: Math.max(prev.longestStreakDays || 0, streakStats.longestStreak),
-      totalActiveDays: streakStats.totalActiveDays,
-    }));
-  }, [streakStats.currentStreak, streakStats.longestStreak, streakStats.totalActiveDays]);
-
-  // Subscribe to syncManager status events
-  useEffect(() => {
-    const unsubscribe = syncManager.subscribe((status, count) => {
-      setSyncStatus(status);
-      setPendingCount(count);
-      setIsOnline(syncManager.isOnline());
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Load Tasks, Goals, and Daily Logs on user change or mount
-  useEffect(() => {
-    let isMounted = true;
-    setLoadingData(true);
-
-    const loadInitialData = async () => {
-      try {
-        const [tasksRes, goalsRes, logsRes] = await Promise.all([
-          syncManager.loadTasks(userId, defaultTasksSeed),
-          syncManager.loadGoals(userId, defaultGoalsSeed),
-          syncManager.loadDailyLogs(userId, []),
-        ]);
-
-        if (isMounted) {
-          setTasks(tasksRes.tasks);
-          setGoals(goalsRes.goals);
-          setDailyLogs(logsRes.dailyLogs);
-          setLoadingData(false);
-        }
-      } catch (err) {
-        console.error('Failed to load initial data:', err);
-        if (isMounted) {
-          setTasks(defaultTasksSeed);
-          setGoals(defaultGoalsSeed);
-          setDailyLogs([]);
-          setLoadingData(false);
-        }
-      }
-    };
-
-    loadInitialData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
-
-  // Helper to auto-sync today's or specified date's DailyStudyLog
-  const syncDailyLogForDate = useCallback(
-    (targetDate: string, updatedTasks?: TaskItem[], updatedSessions?: StudySession[]) => {
-      const allT = updatedTasks || tasks;
-      const allS = updatedSessions || sessions;
-
-      const dateTasks = allT.filter((t) => t.date === targetDate);
-      const dateSessions = allS.filter((s) => s.date === targetDate);
-
-      const tasksCompleted = dateTasks.filter((t) => t.completed).length;
-      const tasksTotal = dateTasks.length;
-
-      const studyMinutes = dateSessions.reduce((acc, s) => acc + s.durationMinutes, 0);
-      const physicsMinutes = dateSessions
-        .filter((s) => s.subject === 'Physics')
-        .reduce((acc, s) => acc + s.durationMinutes, 0);
-      const chemistryMinutes = dateSessions
-        .filter((s) => s.subject === 'Chemistry')
-        .reduce((acc, s) => acc + s.durationMinutes, 0);
-      const biologyMinutes = dateSessions
-        .filter((s) => s.subject === 'Biology')
-        .reduce((acc, s) => acc + s.durationMinutes, 0);
-
-      const chaptersStudied = Array.from(
-        new Set([
-          ...dateTasks.map((t) => t.chapter).filter(Boolean),
-          ...dateSessions.map((s) => s.chapter).filter(Boolean),
-        ])
-      ) as string[];
-
-      setDailyLogs((prev) => {
-        const existing = prev.find((l) => l.date === targetDate);
-        const finalStudyMins = Math.max(studyMinutes, existing?.studyMinutes || 0);
-        const finalPhy = Math.max(physicsMinutes, existing?.physicsMinutes || 0);
-        const finalChem = Math.max(chemistryMinutes, existing?.chemistryMinutes || 0);
-        const finalBio = Math.max(biologyMinutes, existing?.biologyMinutes || 0);
-
-        const newLog: DailyStudyLog = {
-          id: existing?.id || `log_${userId}_${targetDate}`,
-          date: targetDate,
-          userId,
-          studyMinutes: finalStudyMins,
-          tasksCompleted,
-          tasksTotal,
-          physicsMinutes: finalPhy,
-          chemistryMinutes: finalChem,
-          biologyMinutes: finalBio,
-          chaptersStudied: chaptersStudied.length > 0 ? chaptersStudied : existing?.chaptersStudied || [],
-          notes: existing?.notes,
-          isShieldUsed: existing?.isShieldUsed,
-          updatedAt: new Date().toISOString(),
-        };
-
-        const updated = existing
-          ? prev.map((l) => (l.date === targetDate ? newLog : l))
-          : [newLog, ...prev];
-
-        cacheService.setDailyLogs(userId, updated);
-        syncManager.mutateDailyLog(userId, newLog, prev);
-        return updated;
-      });
-    },
-    [userId, tasks, sessions]
-  );
-
-  // Recalculate stats dynamically from tasks
-  useEffect(() => {
-    const completed = tasks.filter((t) => t.completed).length;
-    const total = tasks.length;
-    setStats((prev) => ({
-      ...prev,
-      tasksCompletedToday: completed,
-      totalTasksToday: total,
-      targetYear: user?.targetYear || prev.targetYear,
-      targetScore: user?.targetScore || prev.targetScore,
-    }));
-  }, [tasks, user]);
-
-  // --- Task Operations ---
-  const addTask = async (data: Omit<TaskItem, 'id' | 'completed' | 'completedCount' | 'date'> & { date?: string }) => {
-    const newTask: TaskItem = {
-      ...data,
-      id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      userId,
-      completed: false,
-      completedCount: 0,
-      date: data.date || new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      synced: false,
-    };
-
-    const updated = await syncManager.mutateTask(userId, 'create', newTask, tasks);
-    setTasks(updated);
-    syncDailyLogForDate(newTask.date, updated);
-    showToast('Task added and saved to cache', 'success');
-  };
-
-  const toggleTask = async (id: string) => {
-    const target = tasks.find((t) => t.id === id);
-    if (!target) return;
-
-    const updatedTask: TaskItem = {
-      ...target,
-      completed: !target.completed,
-      completedCount: !target.completed ? target.targetCount : 0,
-      updatedAt: new Date().toISOString(),
-    };
-
-    const updated = await syncManager.mutateTask(userId, 'update', updatedTask, tasks);
-    setTasks(updated);
-    syncDailyLogForDate(target.date, updated);
-  };
-
-  const deleteTask = async (id: string) => {
-    const target = tasks.find((t) => t.id === id);
-    if (!target) return;
-
-    const updated = await syncManager.mutateTask(userId, 'delete', target, tasks);
-    setTasks(updated);
-    syncDailyLogForDate(target.date, updated);
-    showToast('Task removed', 'info');
-  };
-
-  const updateTaskItem = async (id: string, updates: Partial<TaskItem>) => {
-    const target = tasks.find((t) => t.id === id);
-    if (!target) return;
-
-    const updatedTask: TaskItem = {
-      ...target,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-
-    const updated = await syncManager.mutateTask(userId, 'update', updatedTask, tasks);
-    setTasks(updated);
-    syncDailyLogForDate(target.date, updated);
-    showToast('Task updated', 'success');
-  };
-
-  // --- Goal Operations ---
-  const addGoal = async (data: Omit<GoalItem, 'id' | 'completed' | 'progressPercent'> & { progressPercent?: number }) => {
-    const initialProgress = Math.min(100, Math.max(0, data.progressPercent ?? 0));
-    const newGoal: GoalItem = {
-      ...data,
-      id: `goal-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      userId,
-      progressPercent: initialProgress,
-      completed: initialProgress >= 100,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      synced: false,
-    };
-
-    const updated = await syncManager.mutateGoal(userId, 'create', newGoal, goals);
-    setGoals(updated);
-    showToast('New study goal created', 'success');
-  };
-
-  const toggleGoal = async (id: string) => {
-    const target = goals.find((g) => g.id === id);
-    if (!target) return;
-
-    const willBeCompleted = !target.completed;
-    const updatedGoal: GoalItem = {
-      ...target,
-      completed: willBeCompleted,
-      progressPercent: willBeCompleted ? 100 : (target.progressPercent === 100 ? 50 : target.progressPercent),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const updated = await syncManager.mutateGoal(userId, 'update', updatedGoal, goals);
-    setGoals(updated);
-    if (willBeCompleted) {
-      showToast('🎉 Goal completed! Great achievement!', 'success');
-    } else {
-      showToast('Goal reopened to active', 'info');
-    }
-  };
-
-  const deleteGoal = async (id: string) => {
-    const target = goals.find((g) => g.id === id);
-    if (!target) return;
-
-    const updated = await syncManager.mutateGoal(userId, 'delete', target, goals);
-    setGoals(updated);
-    showToast('Goal removed', 'info');
-  };
-
-  const updateGoalItem = async (id: string, updates: Partial<GoalItem>) => {
-    const target = goals.find((g) => g.id === id);
-    if (!target) return;
-
-    let nextProgress = updates.progressPercent !== undefined ? Math.min(100, Math.max(0, updates.progressPercent)) : target.progressPercent;
-    let nextCompleted = updates.completed !== undefined ? updates.completed : target.completed;
-
-    // If progress reaches 100%, automatically mark as completed
-    if (updates.progressPercent !== undefined && updates.progressPercent >= 100 && !target.completed) {
-      nextCompleted = true;
-    }
-
-    const updatedGoal: GoalItem = {
-      ...target,
-      ...updates,
-      progressPercent: nextProgress,
-      completed: nextCompleted,
-      updatedAt: new Date().toISOString(),
-    };
-
-    const updated = await syncManager.mutateGoal(userId, 'update', updatedGoal, goals);
-    setGoals(updated);
-    showToast('Goal updated', 'success');
-  };
-
-  const logStudySession = async (sessionData: Omit<StudySession, 'id' | 'completedAt' | 'date'> & { date?: string }) => {
-    const today = new Date().toISOString().split('T')[0];
-    const newSession: StudySession = {
-      ...sessionData,
-      id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      userId,
-      date: sessionData.date || today,
-      completedAt: new Date().toISOString(),
-    };
-
-    const updatedSessions = [newSession, ...sessions];
-    setSessions(updatedSessions);
-    try {
-      localStorage.setItem(`prepmate_sessions_${userId}`, JSON.stringify(updatedSessions));
-    } catch (e) {
-      console.warn('Could not cache session locally:', e);
-    }
-
-    // Auto-update stats todayStudyMinutes
-    setStats((prev) => ({
-      ...prev,
-      todayStudyMinutes: prev.todayStudyMinutes + newSession.durationMinutes,
-    }));
-
-    // Auto-log to daily tasks if linked
-    if (sessionData.linkedTaskId) {
-      const task = tasks.find((t) => t.id === sessionData.linkedTaskId);
-      if (task) {
-        const increment = task.type === 'Lecture' ? newSession.durationMinutes : 1;
-        const newCompletedCount = Math.min(task.targetCount, task.completedCount + increment);
-        const isDone = newCompletedCount >= task.targetCount;
-        await updateTaskItem(task.id, {
-          completedCount: newCompletedCount,
-          completed: isDone ? true : task.completed,
-        });
-        showToast(`Auto-logged ${newSession.durationMinutes}m to "${task.title}"! 🎯`, 'success');
-      } else {
-        showToast(`${newSession.durationMinutes} mins of ${newSession.subject} logged! 🩺`, 'success');
-      }
-    } else {
-      showToast(`${newSession.durationMinutes} mins of ${newSession.subject} study logged! 🩺`, 'success');
-    }
-
-    // Sync daily log for date
-    syncDailyLogForDate(newSession.date, tasks, updatedSessions);
-  };
-
-  const deleteSession = async (id: string) => {
-    const target = sessions.find((s) => s.id === id);
-    if (!target) return;
-    const updated = sessions.filter((s) => s.id !== id);
-    setSessions(updated);
-    try {
-      localStorage.setItem(`prepmate_sessions_${userId}`, JSON.stringify(updated));
-    } catch (e) {
-      console.warn(e);
-    }
-    setStats((prev) => ({
-      ...prev,
-      todayStudyMinutes: Math.max(0, prev.todayStudyMinutes - target.durationMinutes),
-    }));
-    showToast('Study session removed', 'info');
-  };
+  }, [user?.targetYear, user?.targetScore]);
 
   const updateStats = (newStats: Partial<UserStats>) => {
     setStats((prev) => ({ ...prev, ...newStats }));
   };
 
-  const saveDailyReflection = async (date: string, notes: string) => {
-    setDailyLogs((prev) => {
-      const existing = prev.find((l) => l.date === date);
-      let updatedLog: DailyStudyLog;
-      if (existing) {
-        updatedLog = { ...existing, notes, updatedAt: new Date().toISOString() };
-      } else {
-        updatedLog = {
-          id: `log_${userId}_${date}`,
-          date,
-          userId,
-          studyMinutes: 0,
-          tasksCompleted: 0,
-          tasksTotal: 0,
-          physicsMinutes: 0,
-          chemistryMinutes: 0,
-          biologyMinutes: 0,
-          notes,
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      const nextLogs = existing
-        ? prev.map((l) => (l.date === date ? updatedLog : l))
-        : [updatedLog, ...prev];
+  // 1. Study operations: Tasks, Goals, Sessions, Daily Logs & Streaks
+  const studyOps = useStudyOperations({
+    userId,
+    stats,
+    setStats,
+    showToast,
+  });
 
-      cacheService.setDailyLogs(userId, nextLogs);
-      syncManager.mutateDailyLog(userId, updatedLog, prev);
-      return nextLogs;
-    });
-    showToast('Daily reflection saved! 📝', 'success');
-  };
+  // 2. Queue & offline synchronization
+  const queueOps = useQueueIntegration(showToast);
 
-  const useStreakShield = async (): Promise<boolean> => {
-    const shields = stats.streakShields ?? 1;
-    if (shields <= 0) {
-      showToast('No Streak Shields available! Keep studying to earn more 🛡️', 'error');
-      return false;
-    }
+  // 3. Partner system
+  const partnerOps = usePartnerIntegration(user, userId, stats, showToast);
 
-    const today = formatDateKey(new Date());
-    setDailyLogs((prev) => {
-      const yest = new Date();
-      yest.setDate(yest.getDate() - 1);
-      const yestStr = formatDateKey(yest);
-      const targetDate = prev.find(
-        (l) => l.date === yestStr && !l.isShieldUsed && l.studyMinutes < 25 && l.tasksCompleted === 0
-      )
-        ? yestStr
-        : today;
-
-      const existing = prev.find((l) => l.date === targetDate);
-      const updatedLog: DailyStudyLog = existing
-        ? { ...existing, isShieldUsed: true, updatedAt: new Date().toISOString() }
-        : {
-            id: `log_${userId}_${targetDate}`,
-            date: targetDate,
-            userId,
-            studyMinutes: 0,
-            tasksCompleted: 0,
-            tasksTotal: 0,
-            physicsMinutes: 0,
-            chemistryMinutes: 0,
-            biologyMinutes: 0,
-            isShieldUsed: true,
-            updatedAt: new Date().toISOString(),
-          };
-
-      const nextLogs = existing
-        ? prev.map((l) => (l.date === targetDate ? updatedLog : l))
-        : [updatedLog, ...prev];
-
-      cacheService.setDailyLogs(userId, nextLogs);
-      syncManager.mutateDailyLog(userId, updatedLog, prev);
-      return nextLogs;
-    });
-
-    setStats((prev) => ({
-      ...prev,
-      streakShields: Math.max(0, (prev.streakShields ?? 1) - 1),
-    }));
-
-    showToast('Streak Shield activated! 🛡️ Streak preserved.', 'success');
-    return true;
-  };
-
-  // --- Partner Functions ---
-  const searchPartners = useCallback(
-    async (q: string): Promise<PartnerUserSearchResult[]> => {
-      const allReqs = [...receivedRequests, ...sentRequests];
-      return partnerService.searchUsers(q, currentUserProfile, activePartnership, allReqs);
-    },
-    [receivedRequests, sentRequests, currentUserProfile, activePartnership]
-  );
-
-  const sendPartnerRequest = useCallback(
-    async (
-      targetUser: { uid?: string; username: string; displayName?: string; targetScore?: number; targetYear?: string; avatarBg?: string },
-      cheerMessage?: string
-    ): Promise<void> => {
-      try {
-        const newReq = await partnerService.sendRequest(currentUserProfile, targetUser, cheerMessage);
-        setSentRequests((prev) => [newReq, ...prev.filter((r) => r.receiverUsername !== newReq.receiverUsername)]);
-        showToast(`Partner request sent to @${newReq.receiverUsername}! 🤝`, 'success');
-      } catch (err: any) {
-        showToast(err.message || 'Failed to send request.', 'error');
-        throw err;
-      }
-    },
-    [currentUserProfile, showToast]
-  );
-
-  const acceptPartnerRequest = useCallback(
-    async (requestId: string): Promise<void> => {
-      try {
-        const newPartnership = await partnerService.acceptRequest(requestId, currentUserProfile);
-        setActivePartnership(newPartnership);
-        setReceivedRequests((prev) => prev.filter((r) => r.id !== requestId));
-        showToast(`🎉 Partnership confirmed with ${newPartnership.partner.name}! Ready to compete on VS Board.`, 'success');
-      } catch (err: any) {
-        showToast(err.message || 'Failed to accept request.', 'error');
-        throw err;
-      }
-    },
-    [currentUserProfile, showToast]
-  );
-
-  const rejectPartnerRequest = useCallback(
-    async (requestId: string): Promise<void> => {
-      try {
-        await partnerService.rejectRequest(requestId);
-        setReceivedRequests((prev) => prev.filter((r) => r.id !== requestId));
-        showToast('Request declined.', 'info');
-      } catch (err: any) {
-        showToast('Failed to decline request.', 'error');
-      }
-    },
-    [showToast]
-  );
-
-  const cancelPartnerRequest = useCallback(
-    async (requestId: string): Promise<void> => {
-      try {
-        await partnerService.cancelRequest(requestId);
-        setSentRequests((prev) => prev.filter((r) => r.id !== requestId));
-        showToast('Partner request cancelled.', 'info');
-      } catch (err: any) {
-        showToast('Failed to cancel request.', 'error');
-      }
-    },
-    [showToast]
-  );
-
-  const endCurrentPartnership = useCallback(async (): Promise<void> => {
-    if (!activePartnership) return;
-    try {
-      await partnerService.endPartnership(activePartnership.id);
-      setActivePartnership(null);
-      showToast('Partnership ended.', 'info');
-    } catch (err: any) {
-      showToast('Failed to end partnership.', 'error');
-    }
-  }, [activePartnership, showToast]);
-
-  const sendPartnerCheer = useCallback(
-    async (message: string): Promise<void> => {
-      if (!activePartnership) return;
-      try {
-        await partnerService.sendCheer(
-          activePartnership.id,
-          currentUserProfile.uid,
-          currentUserProfile.displayName,
-          message
-        );
-        showToast('Cheer nudge sent to partner! 🎉', 'success');
-      } catch (err: any) {
-        showToast('Failed to send cheer.', 'error');
-      }
-    },
-    [activePartnership, currentUserProfile, showToast]
-  );
-
-  const syncNow = async () => {
-    showToast('Syncing with cloud...', 'info');
-    await syncManager.processQueue();
-    // Refresh tasks, goals, and daily logs from cloud
-    cacheService.invalidateCache(userId);
-    const [t, g, l] = await Promise.all([
-      syncManager.loadTasks(userId, tasks),
-      syncManager.loadGoals(userId, goals),
-      syncManager.loadDailyLogs(userId, dailyLogs),
-    ]);
-    setTasks(t.tasks);
-    setGoals(g.goals);
-    setDailyLogs(l.dailyLogs);
-    showToast('Everything up to date!', 'success');
-  };
-
-  // Phase 15: Notification operations
-  const markNotifAsRead = useCallback((id: string) => {
-    notificationService.markAsRead(id);
-  }, []);
-
-  const markAllNotifsAsRead = useCallback(() => {
-    notificationService.markAllAsRead();
-  }, []);
-
-  const deleteNotification = useCallback((id: string) => {
-    notificationService.deleteNotification(id);
-  }, []);
-
-  const clearAllNotifs = useCallback(() => {
-    notificationService.clearAll();
-  }, []);
-
-  const sendTestNotification = useCallback((type: NotificationType) => {
-    notificationService.sendTestNotification(type);
-    showToast(`Test reminder sent: ${type}`, 'info');
-  }, [showToast]);
-
-  const requestNotificationPermission = useCallback(async () => {
-    const perm = await notificationService.requestNotificationPermission();
-    setHasBrowserNotificationPermission(perm === 'granted');
-    if (perm === 'granted') {
-      showToast('Notifications enabled! Daily 7:00 AM kickoff & streak warnings active.', 'success');
-    } else {
-      showToast('Browser notifications not enabled.', 'info');
-    }
-  }, [showToast]);
-
-  // Phase 16: Offline & Queue Management operations
-  const toggleSimulateOffline = useCallback(() => {
-    const next = !syncManager.isSimulatingOffline();
-    syncManager.setSimulateOffline(next);
-    setIsSimulatingOffline(next);
-    setIsOnline(syncManager.isOnline());
-    if (next) {
-      showToast('Simulated Offline Mode active. All changes queued locally.', 'info');
-    } else {
-      showToast('Online mode restored. Syncing pending mutations...', 'success');
-    }
-  }, [showToast]);
-
-  const removeQueueItem = useCallback((id: string) => {
-    syncManager.removeFromQueue(id);
-    setPendingQueueList(syncManager.getQueue());
-    showToast('Queued mutation removed.', 'info');
-  }, [showToast]);
-
-  const clearQueue = useCallback(() => {
-    syncManager.clearQueue();
-    setPendingQueueList([]);
-    showToast('Offline queue cleared.', 'info');
-  }, [showToast]);
-
-  const clearConflictLogs = useCallback(() => {
-    syncManager.clearConflictLogs();
-    setConflictLogs([]);
-    showToast('Conflict log history cleared.', 'info');
-  }, [showToast]);
-
-  // Phase 15: Check and trigger real-time daily study reminders & streak warnings
-  useEffect(() => {
-    notificationService.checkAndGenerateReminders(stats, activePartner);
-  }, [stats.todayStudyMinutes, stats.tasksCompletedToday, stats.streakDays, activePartner?.isStudyingNow]);
+  // 4. Notifications & study reminders
+  const notifOps = useNotificationIntegration(showToast, stats, partnerOps.activePartner);
 
   return (
     <DataContext.Provider
       value={{
-        tasks,
-        goals,
-        sessions,
-        dailyLogs,
-        streakStats,
+        // Study operations
+        tasks: studyOps.tasks,
+        goals: studyOps.goals,
+        sessions: studyOps.sessions,
+        dailyLogs: studyOps.dailyLogs,
+        streakStats: studyOps.streakStats,
+        loadingData: studyOps.loadingData,
+        addTask: studyOps.addTask,
+        toggleTask: studyOps.toggleTask,
+        deleteTask: studyOps.deleteTask,
+        updateTaskItem: studyOps.updateTaskItem,
+        addGoal: studyOps.addGoal,
+        toggleGoal: studyOps.toggleGoal,
+        deleteGoal: studyOps.deleteGoal,
+        updateGoalItem: studyOps.updateGoalItem,
+        logStudySession: studyOps.logStudySession,
+        deleteSession: studyOps.deleteSession,
+        saveDailyReflection: studyOps.saveDailyReflection,
+        useStreakShield: studyOps.useStreakShield,
+        syncNow: studyOps.syncNow,
+
+        // Core stats
         stats,
-        syncStatus,
-        isOnline,
-        pendingCount,
-        loadingData,
-        syncNow,
-        addTask,
-        toggleTask,
-        deleteTask,
-        updateTaskItem,
-        addGoal,
-        toggleGoal,
-        deleteGoal,
-        updateGoalItem,
-        logStudySession,
-        deleteSession,
         updateStats,
-        saveDailyReflection,
-        useStreakShield,
-        receivedRequests,
-        sentRequests,
-        pendingPartnerRequestsCount,
-        activePartnership,
-        activePartner,
-        searchPartners,
-        sendPartnerRequest,
-        acceptPartnerRequest,
-        rejectPartnerRequest,
-        cancelPartnerRequest,
-        endCurrentPartnership,
-        refreshPartnerData,
-        sendPartnerCheer,
 
-        // Phase 15
-        notifications,
-        unreadNotifCount,
-        markNotifAsRead,
-        markAllNotifsAsRead,
-        deleteNotification,
-        clearAllNotifs,
-        sendTestNotification,
-        requestNotificationPermission,
-        hasBrowserNotificationPermission,
+        // Queue & Sync
+        syncStatus: queueOps.syncStatus,
+        isOnline: queueOps.isOnline,
+        pendingCount: queueOps.pendingCount,
+        isSimulatingOffline: queueOps.isSimulatingOffline,
+        pendingQueueList: queueOps.pendingQueueList,
+        conflictLogs: queueOps.conflictLogs,
+        toggleSimulateOffline: queueOps.toggleSimulateOffline,
+        removeQueueItem: queueOps.removeQueueItem,
+        clearQueue: queueOps.clearQueue,
+        clearConflictLogs: queueOps.clearConflictLogs,
 
-        // Phase 16
-        isSimulatingOffline,
-        toggleSimulateOffline,
-        pendingQueueList,
-        conflictLogs,
-        removeQueueItem,
-        clearQueue,
-        clearConflictLogs,
+        // Partner system
+        receivedRequests: partnerOps.receivedRequests,
+        sentRequests: partnerOps.sentRequests,
+        pendingPartnerRequestsCount: partnerOps.pendingPartnerRequestsCount,
+        activePartnership: partnerOps.activePartnership,
+        activePartner: partnerOps.activePartner,
+        refreshPartnerData: partnerOps.refreshPartnerData,
+        searchPartners: partnerOps.searchPartners,
+        sendPartnerRequest: partnerOps.sendPartnerRequest,
+        acceptPartnerRequest: partnerOps.acceptPartnerRequest,
+        rejectPartnerRequest: partnerOps.rejectPartnerRequest,
+        cancelPartnerRequest: partnerOps.cancelPartnerRequest,
+        endCurrentPartnership: partnerOps.endCurrentPartnership,
+        sendPartnerCheer: partnerOps.sendPartnerCheer,
+
+        // Notifications
+        notifications: notifOps.notifications,
+        unreadNotifCount: notifOps.unreadNotifCount,
+        markNotifAsRead: notifOps.markNotifAsRead,
+        markAllNotifsAsRead: notifOps.markAllNotifsAsRead,
+        deleteNotification: notifOps.deleteNotification,
+        clearAllNotifs: notifOps.clearAllNotifs,
+        sendTestNotification: notifOps.sendTestNotification,
+        requestNotificationPermission: notifOps.requestNotificationPermission,
+        hasBrowserNotificationPermission: notifOps.hasBrowserNotificationPermission,
       }}
     >
       {children}

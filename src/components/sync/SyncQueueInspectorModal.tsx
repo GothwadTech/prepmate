@@ -1,20 +1,11 @@
 import React, { useState } from 'react';
-import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
-import {
-  WifiIcon,
-  WifiOffIcon,
-  RefreshCwIcon,
-  TrashIcon,
-  CheckCircle2Icon,
-  CloseIcon,
-  SlidersIcon,
-  CloudCheckIcon,
-  SparklesIcon,
-  ChevronLeftIcon,
-} from '../icons/SvgIcons';
 import { QueuedMutation, ConflictResolutionLog, SyncStatus } from '../../types';
+import { SyncQueueHeader } from './SyncQueueHeader';
+import { SyncQueueList } from './SyncQueueList';
+import { SyncConflictLogsList } from './SyncConflictLogsList';
+import { SyncControlsSection } from './SyncControlsSection';
 
 interface SyncQueueInspectorModalProps {
   isOpen: boolean;
@@ -59,109 +50,32 @@ export const SyncQueueInspectorModal: React.FC<SyncQueueInspectorModalProps> = (
     }
   };
 
-  const formatTime = (timestamp: number | string) => {
-    const d = new Date(timestamp);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
-
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
+        width: '100%',
+        height: '100%',
         backgroundColor: 'var(--background)',
         zIndex: 1100,
         display: 'flex',
         flexDirection: 'column',
-        maxWidth: '480px',
-        margin: '0 auto',
-        height: '100%',
+        margin: 0,
         overflow: 'hidden',
+        boxSizing: 'border-box',
       }}
       id="sync-queue-inspector-dialog"
     >
-      {/* Standard Google-Style 54px Header */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          height: '54px',
-          backgroundColor: '#202124',
-          borderBottom: '1px solid #3C4043',
-          borderBottomLeftRadius: '18px',
-          borderBottomRightRadius: '18px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
-          flexShrink: 0,
-        }}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          id="close-queue-inspector-btn"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid #3C4043',
-            borderRadius: '20px',
-            padding: '6px 12px',
-            color: '#FFFFFF',
-            fontSize: '13px',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          <ChevronLeftIcon size={16} />
-          <span>Back</span>
-        </button>
+      {/* 1. Header */}
+      <SyncQueueHeader
+        onClose={onClose}
+        isOnline={isOnline}
+        syncing={syncing}
+        onSync={handleSync}
+      />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '15px', fontWeight: 700, color: '#FFFFFF' }}>
-            Sync & Network
-          </span>
-          <span
-            style={{
-              fontSize: '10.5px',
-              fontWeight: 800,
-              padding: '2px 7px',
-              borderRadius: '12px',
-              backgroundColor: isOnline ? 'rgba(52, 168, 83, 0.25)' : 'rgba(239, 68, 68, 0.25)',
-              color: isOnline ? '#34D399' : '#FCA5A5',
-              border: isOnline ? '1px solid rgba(52, 168, 83, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
-            }}
-          >
-            {isOnline ? 'Online' : 'Offline'}
-          </span>
-        </div>
-
-        <div style={{ width: '64px', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            onClick={handleSync}
-            disabled={syncing || !isOnline}
-            id="sync-now-header-btn"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: isOnline ? '#60A5FA' : '#6B7280',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: isOnline ? 'pointer' : 'not-allowed',
-              padding: '4px',
-            }}
-          >
-            {syncing ? 'Syncing...' : 'Sync'}
-          </button>
-        </div>
-      </header>
-
-      {/* Main Scrollable Body */}
+      {/* 2. Main Body Container */}
       <div
         style={{
           flex: 1,
@@ -169,6 +83,10 @@ export const SyncQueueInspectorModal: React.FC<SyncQueueInspectorModalProps> = (
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
+          width: '100%',
+          maxWidth: '720px',
+          margin: '0 auto',
+          boxSizing: 'border-box',
         }}
       >
         {/* Status Bar */}
@@ -277,256 +195,30 @@ export const SyncQueueInspectorModal: React.FC<SyncQueueInspectorModalProps> = (
         </div>
 
         {/* Tab Contents */}
-        <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1, maxHeight: '380px' }}>
-          {/* 1. Queue Items List */}
+        <div style={{ padding: '16px', overflowY: 'auto', flex: 1 }}>
           {activeTab === 'queue' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {pendingQueue.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)' }}>
-                  <CloudCheckIcon size={36} color="var(--success)" style={{ margin: '0 auto 8px auto' }} />
-                  <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '14px' }}>
-                    Queue is completely empty!
-                  </div>
-                  <p style={{ fontSize: '12px', margin: '4px 0 0 0' }}>
-                    All tasks, goals, and daily study logs are synchronized with Firestore.
-                  </p>
-                </div>
-              ) : (
-                pendingQueue.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: 'var(--radius-sm)',
-                      backgroundColor: 'var(--surface-variant)',
-                      border: '1px solid var(--border)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '8px',
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            fontWeight: 800,
-                            padding: '2px 5px',
-                            borderRadius: 'var(--radius-xs)',
-                            backgroundColor:
-                              item.operation === 'create'
-                                ? 'var(--success-container)'
-                                : item.operation === 'delete'
-                                ? '#FEE2E2'
-                                : 'var(--primary-container)',
-                            color:
-                              item.operation === 'create'
-                                ? 'var(--success)'
-                                : item.operation === 'delete'
-                                ? '#DC2626'
-                                : 'var(--primary)',
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          {item.operation}
-                        </span>
-                        <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>
-                          {item.collection.toUpperCase()}
-                        </strong>
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: 'var(--text-secondary)',
-                          marginTop: '2px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        Doc: {item.data?.title || item.docId}
-                      </div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                        Queued at {formatTime(item.timestamp)} • Retries: {item.retryCount || 0}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => onRemoveQueueItem(item.id)}
-                      title="Discard this queued mutation"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        padding: '4px',
-                      }}
-                    >
-                      <TrashIcon size={15} color="var(--danger)" />
-                    </button>
-                  </div>
-                ))
-              )}
-
-              {pendingQueue.length > 0 && (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onClearQueue}
-                    style={{ flex: 1, color: 'var(--danger)', borderColor: 'var(--border)' }}
-                  >
-                    Clear All ({pendingQueue.length})
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleSync}
-                    disabled={syncing || !isOnline}
-                    leftIcon={<RefreshCwIcon size={14} />}
-                    style={{ flex: 1 }}
-                  >
-                    {syncing ? 'Syncing...' : 'Sync Queue Now'}
-                  </Button>
-                </div>
-              )}
-            </div>
+            <SyncQueueList
+              pendingQueue={pendingQueue}
+              onRemoveQueueItem={onRemoveQueueItem}
+              onClearQueue={onClearQueue}
+              onSync={handleSync}
+              syncing={syncing}
+              isOnline={isOnline}
+            />
           )}
 
-          {/* 2. Conflict Logs */}
           {activeTab === 'conflicts' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div
-                style={{
-                  padding: '8px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--primary-container)',
-                  fontSize: '11px',
-                  color: 'var(--primary)',
-                  lineHeight: 1.4,
-                }}
-              >
-                <strong>Conflict Resolution Strategy:</strong> Smart Merge + Last-Write-Wins (LWW). Local completions and notes are preserved when syncing across devices.
-              </div>
-
-              {conflictLogs.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-secondary)' }}>
-                  <CheckCircle2Icon size={32} color="var(--success)" style={{ margin: '0 auto 6px auto' }} />
-                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13px' }}>
-                    No sync conflicts recorded!
-                  </div>
-                  <p style={{ fontSize: '11px', margin: '2px 0 0 0' }}>
-                    All local and cloud document timestamps were seamlessly aligned.
-                  </p>
-                </div>
-              ) : (
-                conflictLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    style={{
-                      padding: '8px 10px',
-                      borderRadius: 'var(--radius-sm)',
-                      backgroundColor: 'var(--surface-variant)',
-                      border: '1px solid var(--border)',
-                      fontSize: '11.5px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <strong style={{ color: 'var(--text-primary)' }}>{log.docTitle}</strong>
-                      <span
-                        style={{
-                          fontSize: '9.5px',
-                          fontWeight: 700,
-                          backgroundColor: 'var(--secondary-container)',
-                          color: 'var(--secondary)',
-                          padding: '1px 5px',
-                          borderRadius: 'var(--radius-xs)',
-                        }}
-                      >
-                        {log.resolutionStrategy}
-                      </span>
-                    </div>
-                    <p style={{ margin: '3px 0', color: 'var(--text-secondary)', fontSize: '11px' }}>
-                      {log.details}
-                    </p>
-                    <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                      Resolved at {new Date(log.resolvedAt).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))
-              )}
-
-              {conflictLogs.length > 0 && (
-                <Button variant="outline" size="sm" onClick={onClearConflictLogs} isFullWidth>
-                  Clear Conflict Log History
-                </Button>
-              )}
-            </div>
+            <SyncConflictLogsList
+              conflictLogs={conflictLogs}
+              onClearConflictLogs={onClearConflictLogs}
+            />
           )}
 
-          {/* 3. Offline Simulation & Settings */}
           {activeTab === 'controls' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div
-                style={{
-                  padding: '12px',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: isSimulatingOffline ? 'var(--secondary-container)' : 'var(--surface-variant)',
-                  border: isSimulatingOffline ? '1px solid var(--secondary)' : '1px solid var(--border)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                      Simulate Offline Mode
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      Cut network connection inside app to test instant optimistic UI & queueing.
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={onToggleSimulateOffline}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: 'var(--radius-pill)',
-                      border: 'none',
-                      backgroundColor: isSimulatingOffline ? 'var(--secondary)' : 'var(--primary)',
-                      color: '#FFFFFF',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                    id="toggle-offline-simulation-btn"
-                  >
-                    {isSimulatingOffline ? 'Exit Offline' : 'Go Offline'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Spark Free Tier Limits info */}
-              <div
-                style={{
-                  padding: '10px',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--surface-variant)',
-                  border: '1px solid var(--border)',
-                  fontSize: '11.5px',
-                }}
-              >
-                <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
-                  🛡️ Firebase Spark Free-Tier Safeguards:
-                </strong>
-                <ul style={{ margin: 0, paddingLeft: '16px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                  <li>50,000 document reads/day protected by 10-minute client cache.</li>
-                  <li>20,000 document writes/day conserved via mutation deduplication.</li>
-                  <li>Offline queue automatically flushes with exponential backoff on reconnection.</li>
-                </ul>
-              </div>
-            </div>
+            <SyncControlsSection
+              isSimulatingOffline={isSimulatingOffline}
+              onToggleSimulateOffline={onToggleSimulateOffline}
+            />
           )}
         </div>
 

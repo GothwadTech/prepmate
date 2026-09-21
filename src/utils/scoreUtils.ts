@@ -1,4 +1,5 @@
-import { LeaderboardEntry, LeaderboardFilter, ScoreBreakdown, UserStats, DailyStudyLog, PartnerProfile } from '../types';
+import { LeaderboardEntry, LeaderboardFilter, ScoreBreakdown, UserStats, PartnerProfile } from '../types';
+import { SEED_COMMUNITY_ASPIRANTS } from './communityAspirantsSeed';
 
 /**
  * Prepmate NEET Preparation Score Calculation Formula
@@ -53,156 +54,26 @@ export function calculatePrepScoreBreakdown(
     levelTitle = 'Dedicated Learner 💡';
   }
 
-  // Percentile Estimation (out of typical competitive cohort)
-  // 95+ score -> 99.2th percentile
-  // 80+ score -> 95.0th percentile
-  // 60+ score -> 82.0th percentile
   let percentileRank = 50.0;
   if (totalScore >= 95) percentileRank = 99.4;
   else if (totalScore >= 90) percentileRank = 98.1;
-  else if (totalScore >= 80) percentileRank = 95.6;
-  else if (totalScore >= 70) percentileRank = 91.2;
-  else if (totalScore >= 60) percentileRank = 84.5;
-  else if (totalScore >= 50) percentileRank = 74.0;
-  else if (totalScore >= 40) percentileRank = 62.0;
+  else if (totalScore >= 80) percentileRank = 94.6;
+  else if (totalScore >= 70) percentileRank = 87.2;
+  else if (totalScore >= 60) percentileRank = 78.5;
+  else if (totalScore >= 50) percentileRank = 68.0;
+  else if (totalScore >= 40) percentileRank = 55.0;
 
   return {
-    totalScore,
     studyHoursPoints,
     tasksPoints,
     streakPoints,
-    percentileRank,
+    totalScore,
+    xpPoints,
     level,
     levelTitle,
-    xpPoints,
+    percentileRank,
   };
 }
-
-/**
- * Standard community NEET aspirants seed data for the weekly leaderboard
- */
-const SEED_COMMUNITY_ASPIRANTS: Omit<LeaderboardEntry, 'rank'>[] = [
-  {
-    uid: 'neet-user-1',
-    displayName: 'Aarav Sharma',
-    username: 'aarav_aiims',
-    targetYear: '2026',
-    targetScore: 710,
-    avatarBg: '#0F9D58',
-    weeklyStudyHours: 44.5,
-    weeklyTasksCompleted: 34,
-    streakDays: 24,
-    prepScore: 98,
-    badgeTitle: 'AIR #1 Contender',
-    location: 'Kota, Rajasthan',
-    isStudyingNow: true,
-  },
-  {
-    uid: 'neet-user-2',
-    displayName: 'Sneha Patel',
-    username: 'sneha_neet',
-    targetYear: '2026',
-    targetScore: 705,
-    avatarBg: '#E91E63',
-    weeklyStudyHours: 42.0,
-    weeklyTasksCompleted: 31,
-    streakDays: 19,
-    prepScore: 94,
-    badgeTitle: 'Physics Ninja',
-    location: 'Ahmedabad, Gujarat',
-    isStudyingNow: false,
-  },
-  {
-    uid: 'neet-user-3',
-    displayName: 'Rohan Gupta',
-    username: 'rohan_mamc',
-    targetYear: '2026',
-    targetScore: 695,
-    avatarBg: '#7B1FA2',
-    weeklyStudyHours: 39.5,
-    weeklyTasksCompleted: 29,
-    streakDays: 16,
-    prepScore: 91,
-    badgeTitle: 'Bio Master',
-    location: 'Delhi NCR',
-    isStudyingNow: true,
-  },
-  {
-    uid: 'neet-user-4',
-    displayName: 'Priya Meena',
-    username: 'priya_vmmc',
-    targetYear: '2026',
-    targetScore: 690,
-    avatarBg: '#0494F4',
-    weeklyStudyHours: 37.0,
-    weeklyTasksCompleted: 26,
-    streakDays: 14,
-    prepScore: 87,
-    badgeTitle: 'Streak Champion',
-    location: 'Jaipur, Rajasthan',
-    isStudyingNow: false,
-  },
-  {
-    uid: 'neet-user-5',
-    displayName: 'Kabir Verma',
-    username: 'kabir_kgmu',
-    targetYear: '2026',
-    targetScore: 685,
-    avatarBg: '#F4B400',
-    weeklyStudyHours: 35.0,
-    weeklyTasksCompleted: 24,
-    streakDays: 11,
-    prepScore: 82,
-    badgeTitle: 'Chemistry Whiz',
-    location: 'Lucknow, UP',
-    isStudyingNow: true,
-  },
-  {
-    uid: 'neet-user-6',
-    displayName: 'Ananya Bose',
-    username: 'ananya_cmc',
-    targetYear: '2026',
-    targetScore: 680,
-    avatarBg: '#00897B',
-    weeklyStudyHours: 33.5,
-    weeklyTasksCompleted: 22,
-    streakDays: 9,
-    prepScore: 78,
-    badgeTitle: 'Early Bird',
-    location: 'Kolkata, WB',
-    isStudyingNow: false,
-  },
-  {
-    uid: 'neet-user-7',
-    displayName: 'Tanmay Deshmukh',
-    username: 'tanmay_bjmc',
-    targetYear: '2026',
-    targetScore: 675,
-    avatarBg: '#D81B60',
-    weeklyStudyHours: 31.0,
-    weeklyTasksCompleted: 20,
-    streakDays: 8,
-    prepScore: 74,
-    badgeTitle: 'Night Owl',
-    location: 'Pune, Maharashtra',
-    isStudyingNow: false,
-  },
-  {
-    uid: 'neet-user-8',
-    displayName: 'Meera Nambiar',
-    username: 'meera_jipmer',
-    targetYear: '2026',
-    targetScore: 690,
-    avatarBg: '#5E35B1',
-    weeklyStudyHours: 29.0,
-    weeklyTasksCompleted: 19,
-    streakDays: 7,
-    prepScore: 70,
-    badgeTitle: 'Mock Specialist',
-    location: 'Kochi, Kerala',
-    isStudyingNow: true,
-  },
-];
 
 /**
  * Builds the dynamic weekly leaderboard by merging current user's real stats,
@@ -227,7 +98,6 @@ export function getWeeklyLeaderboard(
   currentUserEntry: LeaderboardEntry;
   totalParticipants: number;
 } {
-  // 1. Calculate current user prep score
   const userBreakdown = calculatePrepScoreBreakdown(
     userWeeklyHours,
     userWeeklyTasks,
@@ -252,7 +122,6 @@ export function getWeeklyLeaderboard(
     isStudyingNow: true,
   };
 
-  // 2. Build array with community aspirants
   const pool: LeaderboardEntry[] = SEED_COMMUNITY_ASPIRANTS.map((s) => ({
     ...s,
     rank: 0,
@@ -260,7 +129,6 @@ export function getWeeklyLeaderboard(
     isPartner: false,
   }));
 
-  // 3. Add Partner if available
   if (partner) {
     const partnerWeeklyHours = partner.weeklyHours || Number((partner.todayStudyHours * 5.8).toFixed(1));
     const partnerWeeklyTasks = Math.round(partner.todayTasksCompleted * 5.5);
@@ -290,19 +158,15 @@ export function getWeeklyLeaderboard(
     });
   }
 
-  // 4. Add current user
   pool.push(currentUserEntry);
 
-  // 5. Apply subject / streak filters if requested
   let filtered = pool;
   if (filter === 'streak') {
     filtered.sort((a, b) => b.streakDays - a.streakDays || b.prepScore - a.prepScore);
   } else {
-    // Default or subject filters sort by prepScore descending, then hours
     filtered.sort((a, b) => b.prepScore - a.prepScore || b.weeklyStudyHours - a.weeklyStudyHours);
   }
 
-  // 6. Assign official ranks
   const entries: LeaderboardEntry[] = filtered.map((item, idx) => ({
     ...item,
     rank: idx + 1,
@@ -316,6 +180,6 @@ export function getWeeklyLeaderboard(
   return {
     entries,
     currentUserEntry: userRanked,
-    totalParticipants: 1420 + entries.length, // realistic cohort size
+    totalParticipants: 1420 + entries.length,
   };
 }

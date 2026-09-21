@@ -5,9 +5,8 @@
  */
 
 import { AppNotification, NotificationType, UserStats, PartnerProfile } from '../types';
-
-const NOTIFICATIONS_STORAGE_KEY = 'prepmate_in_app_notifications';
-const LAST_REMINDER_CHECK_KEY = 'prepmate_last_reminder_date';
+import { NOTIFICATIONS_STORAGE_KEY, initialSeedNotifications } from './notificationSeed';
+import { evaluateDailyReminders } from './reminderEvaluator';
 
 class NotificationService {
   private notifications: AppNotification[] = [];
@@ -23,42 +22,7 @@ class NotificationService {
       if (stored) {
         this.notifications = JSON.parse(stored);
       } else {
-        // Initial welcome notifications seed for NEET aspirants
-        this.notifications = [
-          {
-            id: 'notif-welcome-1',
-            type: 'daily_reminder',
-            title: '🌅 Subah Ka Study Kickoff',
-            message: 'Good morning Aspirant! High-yield NCERT chapters aur numericals solve karke aaj ka din productive banayein.',
-            timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-            read: false,
-            actionTab: 'tasks',
-            actionLabel: 'Check Tasks',
-            icon: '🌅',
-          },
-          {
-            id: 'notif-streak-1',
-            type: 'streak_warning',
-            title: '🔥 Streak Flame Active!',
-            message: 'Aapka 4-day unbroken study streak chal raha hai. Aaj kam se kam 2 tasks complete karke streak save rakhein.',
-            timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-            read: false,
-            actionTab: 'home',
-            actionLabel: 'View Dashboard',
-            icon: '🔥',
-          },
-          {
-            id: 'notif-partner-1',
-            type: 'partner_activity',
-            title: '🤝 Partner Activity Alert',
-            message: 'Aapke study partner ne Physics: Current Electricity session complete kiya! VS Board par score check karein.',
-            timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
-            read: true,
-            actionTab: 'partners',
-            actionLabel: 'Open VS Board',
-            icon: '🤝',
-          },
-        ];
+        this.notifications = [...initialSeedNotifications];
         this.saveToStorage();
       }
     } catch (e) {
@@ -135,102 +99,18 @@ class NotificationService {
     return newNotif;
   }
 
-  /**
-   * Check conditions and trigger real-time reminders
-   */
   public checkAndGenerateReminders(stats: UserStats, partner: PartnerProfile | null) {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const hour = new Date().getHours();
-    const lastCheckDate = localStorage.getItem(LAST_REMINDER_CHECK_KEY);
-
-    // Read user notification preferences
-    let prefs = {
-      morningReminder: true,
-      streakWarning: true,
-      partnerAlerts: true,
-    };
-    try {
-      const savedPrefs = localStorage.getItem('prepmate_notifications');
-      if (savedPrefs) prefs = { ...prefs, ...JSON.parse(savedPrefs) };
-    } catch {
-      //
-    }
-
-    if (lastCheckDate !== todayStr) {
-      // 1. Morning Kickoff Reminder (if morning and hours < 1)
-      if (prefs.morningReminder && hour >= 6 && hour < 14) {
-        if ((stats.todayStudyMinutes || 0) < 30) {
-          const alreadyHasTodayMorning = this.notifications.some(
-            (n) => n.type === 'daily_reminder' && n.timestamp.startsWith(todayStr)
-          );
-          if (!alreadyHasTodayMorning) {
-            this.addNotification({
-              type: 'daily_reminder',
-              title: '🌅 Morning Study Reminder',
-              message: 'NEET 2026 target 680+ marks! Aaj ka study goal complete karne ke liye pehla 25-minute Pomodoro start karein.',
-              actionTab: 'home',
-              actionLabel: 'Start Pomodoro',
-              icon: '🌅',
-            });
-          }
-        }
-      }
-
-      // 2. Evening Streak Warning Alert (if evening and streak active but targets incomplete)
-      if (prefs.streakWarning && hour >= 19) {
-        if ((stats.tasksCompletedToday || 0) < 1 && (stats.todayStudyMinutes || 0) < 60) {
-          const alreadyHasStreakWarning = this.notifications.some(
-            (n) => n.type === 'streak_warning' && n.timestamp.startsWith(todayStr)
-          );
-          if (!alreadyHasStreakWarning) {
-            this.addNotification({
-              type: 'streak_warning',
-              title: `🔥 Streak Alert: ${stats.streakDays} Days at Risk!`,
-              message: `Raat hone se pehle kam se kam ek chapter revise karke daily task complete karein taaki aapka streak flame save rahe.`,
-              actionTab: 'tasks',
-              actionLabel: 'Complete Task',
-              icon: '🔥',
-            });
-          }
-        }
-      }
-
-      localStorage.setItem(LAST_REMINDER_CHECK_KEY, todayStr);
-    }
-
-    // 3. Partner Activity (if partner is studying right now)
-    if (prefs.partnerAlerts && partner?.isStudyingNow) {
-      const recentPartnerNotif = this.notifications.find(
-        (n) => n.type === 'partner_activity' && Date.now() - new Date(n.timestamp).getTime() < 3600000 * 2
-      );
-      if (!recentPartnerNotif) {
-        this.addNotification({
-          type: 'partner_activity',
-          title: `🤝 ${partner.name} is Studying Now!`,
-          message: `${partner.name} ne ${partner.currentSubject || 'Physics'} ka live session start kiya hai. Saath me study session start karein!`,
-          actionTab: 'partners',
-          actionLabel: 'Join Partner',
-          icon: '🤝',
-        });
-      }
-    }
+    evaluateDailyReminders(stats, partner, this.notifications, (n) => this.addNotification(n));
   }
 
-  /**
-   * Browser Push / Desktop Web Notification
-   */
-  public async requestNotificationPermission(): Promise<NotificationPermission> {
+  public async requestNotificationPermission(): Promise<NotificationPermission | 'unsupported'> {
     if (typeof window === 'undefined' || !('Notification' in window)) {
-      return 'denied';
+      return 'unsupported';
     }
-
-    try {
-      const permission = await Notification.requestPermission();
-      return permission;
-    } catch (e) {
-      console.warn('Error requesting notification permission:', e);
-      return 'denied';
+    if (Notification.permission === 'granted') {
+      return 'granted';
     }
+    return await Notification.requestPermission();
   }
 
   public getNotificationPermission(): NotificationPermission | 'unsupported' {
@@ -249,15 +129,11 @@ class NotificationService {
           badge: '/icon-192.png',
         });
       } catch (e) {
-        // Some mobile browsers restrict Notification constructor without service worker
         console.warn('Could not launch native browser notification:', e);
       }
     }
   }
 
-  /**
-   * Send on-demand test notifications (for user manual testing)
-   */
   public sendTestNotification(type: NotificationType) {
     switch (type) {
       case 'daily_reminder':
