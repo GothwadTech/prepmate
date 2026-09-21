@@ -97,7 +97,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   prefilledIdentifier = '',
   prefilledPassword = '',
 }) => {
-  const { signIn, resetPassword } = useAuth();
+  const { signIn, resetPassword, isFirebaseConfigured } = useAuth();
   const [identifier, setIdentifier] = useState(prefilledIdentifier);
   const [password, setPassword] = useState(prefilledPassword);
   const [showPassword, setShowPassword] = useState(false);
@@ -639,6 +639,42 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               ? 'Logging in...'
               : 'Login'}
           </button>
+
+          {/* Quick Demo Mode for Preview / Offline use */}
+          {!isForgotPassword && (
+            <button
+              type="button"
+              onClick={async () => {
+                setLoading(true);
+                setError('');
+                try {
+                  await signIn('demo.aspirant@prepmate.app', 'demo1234');
+                } catch (err: any) {
+                  setError(formatAuthError(err));
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                backgroundColor: 'var(--surface-variant)',
+                color: 'var(--primary)',
+                fontSize: '13px',
+                fontWeight: 700,
+                borderRadius: '14px',
+                border: '1px dashed var(--primary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+            >
+              <span>Explore in Demo Mode (Instant Preview)</span>
+            </button>
+          )}
 
           {/* Back to Login link when in Forgot Password mode */}
           {isForgotPassword && (

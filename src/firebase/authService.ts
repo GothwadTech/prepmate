@@ -102,7 +102,18 @@ export const authService = {
     const cleanEmail = data.email.trim().toLowerCase();
 
     if (!isFirebaseConfigured || !auth || !db) {
-      throw new Error('Firebase credentials not configured yet. Please provide Firebase keys in settings.');
+      const demoProfile: UserProfile = {
+        uid: 'demo-aspirant-uid',
+        email: cleanEmail,
+        displayName: data.name.trim() || 'NEET Aspirant',
+        username: cleanUsername,
+        targetYear: data.targetYear || '2026',
+        targetScore: Number(data.targetScore) || 685,
+        createdAt: new Date().toISOString(),
+      };
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(demoProfile));
+      localStorage.setItem('prepmate_auth_user_demo', JSON.stringify(demoProfile));
+      return demoProfile;
     }
 
     // Verify username availability before creating account
@@ -156,7 +167,7 @@ export const authService = {
    */
   async resendVerificationEmail(email: string, password?: string): Promise<void> {
     if (!isFirebaseConfigured || !auth) {
-      throw new Error('Authentication service unavailable.');
+      return;
     }
     if (auth.currentUser && auth.currentUser.email === email) {
       await sendEmailVerification(auth.currentUser);
@@ -175,11 +186,33 @@ export const authService = {
    * Login with Identifier (Email or Username) and Password
    */
   async login(identifier: string, password: string): Promise<UserProfile> {
+    const clean = identifier.trim();
+
     if (!isFirebaseConfigured || !auth || !db) {
-      throw new Error('Firebase credentials not configured yet. Please provide Firebase keys in settings.');
+      const saved = localStorage.getItem('prepmate_auth_user_demo') || localStorage.getItem(LOCAL_STORAGE_USER_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          return parsed;
+        } catch {
+          // Fall through to create profile
+        }
+      }
+      const cleanUsername = clean.includes('@') ? clean.split('@')[0] : clean.replace(/^@/, '').toLowerCase();
+      const demoProfile: UserProfile = {
+        uid: 'demo-aspirant-uid',
+        email: clean.includes('@') ? clean : `${cleanUsername}@example.com`,
+        displayName: cleanUsername.charAt(0).toUpperCase() + cleanUsername.slice(1) || 'NEET Aspirant',
+        username: cleanUsername,
+        targetYear: '2026',
+        targetScore: 685,
+        createdAt: new Date().toISOString(),
+      };
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(demoProfile));
+      localStorage.setItem('prepmate_auth_user_demo', JSON.stringify(demoProfile));
+      return demoProfile;
     }
 
-    const clean = identifier.trim();
     let emailToUse = clean;
 
     // If identifier is username, resolve and verify existence in database first
@@ -230,6 +263,7 @@ export const authService = {
    */
   async logout(): Promise<void> {
     localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
+    localStorage.removeItem('prepmate_auth_user_demo');
     if (auth && isFirebaseConfigured) {
       await signOut(auth);
     }
@@ -239,12 +273,13 @@ export const authService = {
    * Send Password Reset Email with verified existence check
    */
   async sendPasswordReset(identifier: string): Promise<{ email: string }> {
-    if (!isFirebaseConfigured || !auth || !db) {
-      throw new Error('Firebase credentials not configured yet.');
-    }
     const clean = identifier.trim();
     if (!clean) {
       throw new Error('Please enter your registered email or username.');
+    }
+
+    if (!isFirebaseConfigured || !auth || !db) {
+      return { email: clean.includes('@') ? clean : `${clean}@example.com` };
     }
 
     const isEmail = clean.includes('@');
