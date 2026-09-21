@@ -72,39 +72,47 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       style={{
         position: 'fixed',
         inset: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'var(--background)',
-        zIndex: 1100,
+        zIndex: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         display: 'flex',
-        flexDirection: 'column',
-        margin: 0,
+        justifyContent: 'center',
+        alignItems: 'stretch',
         overflow: 'hidden',
-        boxSizing: 'border-box',
       }}
       id="notification-center-dialog"
     >
-      {/* 1. Full-screen Consistent 54px Header */}
-      <NotificationHeader
-        onClose={onClose}
-        unreadCount={unreadCount}
-        onMarkAllAsRead={onMarkAllAsRead}
-      />
-
-      {/* 2. Main Scrollable Container */}
       <div
         style={{
-          flex: 1,
-          overflowY: 'auto',
+          width: '100%',
+          maxWidth: '480px',
+          height: '100%',
+          backgroundColor: 'var(--bg)',
           display: 'flex',
           flexDirection: 'column',
-          minHeight: 0,
-          width: '100%',
-          maxWidth: '720px',
-          margin: '0 auto',
-          boxSizing: 'border-box',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 0 28px rgba(0, 0, 0, 0.2)',
         }}
       >
+        {/* 1. Full-screen Consistent 54px Header */}
+        <NotificationHeader
+          onClose={onClose}
+          unreadCount={unreadCount}
+          onMarkAllAsRead={onMarkAllAsRead}
+        />
+
+        {/* 2. Main Scrollable Container */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        >
         <NotificationFilters
           filter={filter}
           setFilter={setFilter}
@@ -151,5 +159,6 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         />
       </div>
     </div>
-  );
+  </div>
+);
 };

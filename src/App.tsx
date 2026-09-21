@@ -11,11 +11,10 @@ import { PartnersPage } from './pages/PartnersPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SyllabusPage } from './pages/SyllabusPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
-import { LoginPage } from './pages/auth/LoginPage';
-import { SignupPage } from './pages/auth/SignupPage';
-import { VerificationPage } from './pages/auth/VerificationPage';
 import { TermsPage } from './pages/legal/TermsPage';
 import { PrivacyPage } from './pages/legal/PrivacyPage';
+import { AppLoadingScreen } from './components/layout/AppLoadingScreen';
+import { AppAuthFlow } from './components/layout/AppAuthFlow';
 import { ToastContainer } from './components/common/Toast';
 import { TimerModal } from './components/timer/TimerModal';
 import { FloatingTimerBar } from './components/timer/FloatingTimerBar';
@@ -23,7 +22,7 @@ import { OfflineBanner } from './components/layout/OfflineBanner';
 import { NotificationCenterModal } from './components/notification/NotificationCenterModal';
 import { SyncQueueInspectorModal } from './components/sync/SyncQueueInspectorModal';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { AppTab, AppTheme, UserStats } from './types';
+import { AppTab, AppTheme } from './types';
 
 function MainApp() {
   const { user, loading, toasts, dismissToast } = useAuth();
@@ -96,79 +95,9 @@ function MainApp() {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const getTabTitle = (tab: AppTab) => {
-    switch (tab) {
-      case 'home':
-        return 'Dashboard';
-      case 'tasks':
-        return 'Daily Tasks';
-      case 'goals':
-        return 'Goals Tracker';
-      case 'partners':
-        return 'Partners';
-      case 'syllabus':
-        return 'NEET Syllabus';
-      case 'profile':
-        return 'Profile';
-      case 'analytics':
-        return 'Study Analytics';
-    }
-  };
-
   // 1. Loading Splash Screen
   if (loading) {
-    return (
-      <div className="app-viewport" id="prepmate-viewport">
-        <div
-          className="app-container"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            minHeight: '100vh',
-            background: 'var(--bg)',
-          }}
-        >
-          <img
-            src="/icon-192.png"
-            alt="Prepmate Logo"
-            style={{ width: '64px', height: '64px', borderRadius: '16px', boxShadow: 'var(--shadow-md)' }}
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = 'none';
-            }}
-          />
-          <div style={{ textAlign: 'center' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.4px' }}>
-              Prepmate
-            </h1>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Loading your study dashboard...
-            </p>
-          </div>
-          <div
-            style={{
-              width: '120px',
-              height: '3px',
-              background: 'var(--surface-variant)',
-              borderRadius: '9999px',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                width: '60%',
-                height: '100%',
-                background: 'var(--primary)',
-                borderRadius: '9999px',
-                animation: 'pulse 1.2s infinite ease-in-out',
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
   // 2. Legal Pages (Terms of Service & Privacy Policy)
@@ -191,55 +120,16 @@ function MainApp() {
   // 3. Unauthenticated Protected View: Show Login, Signup, or Email Verification Page
   if (!user) {
     return (
-      <div className="app-viewport" id="prepmate-viewport">
-        <div className="app-container" id="prepmate-auth-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-          {authScreen === 'login' ? (
-            <LoginPage
-              onNavigateToSignup={() => setAuthScreen('signup')}
-              onNavigateToVerification={(email, password) => {
-                setPendingAuthData({ email, password });
-                setAuthScreen('verification');
-              }}
-              onOpenTerms={() => setLegalScreen('terms')}
-              onOpenPrivacy={() => setLegalScreen('privacy')}
-              prefilledIdentifier={pendingAuthData.email}
-              prefilledPassword={pendingAuthData.password}
-              theme={theme}
-              onToggleTheme={handleToggleTheme}
-            />
-          ) : authScreen === 'signup' ? (
-            <SignupPage
-              onNavigateToLogin={() => setAuthScreen('login')}
-              onNavigateToVerification={(email, password) => {
-                setPendingAuthData({ email, password });
-                setAuthScreen('verification');
-              }}
-              onOpenTerms={() => setLegalScreen('terms')}
-              onOpenPrivacy={() => setLegalScreen('privacy')}
-              theme={theme}
-              onToggleTheme={handleToggleTheme}
-            />
-          ) : (
-            <VerificationPage
-              email={pendingAuthData.email}
-              password={pendingAuthData.password}
-              onNavigateToLogin={(autofillData) => {
-                if (autofillData) {
-                  setPendingAuthData({
-                    email: autofillData.email,
-                    password: autofillData.password,
-                  });
-                }
-                setAuthScreen('login');
-              }}
-              onOpenTerms={() => setLegalScreen('terms')}
-              onOpenPrivacy={() => setLegalScreen('privacy')}
-              theme={theme}
-              onToggleTheme={handleToggleTheme}
-            />
-          )}
-        </div>
-      </div>
+      <AppAuthFlow
+        authScreen={authScreen}
+        setAuthScreen={setAuthScreen}
+        pendingAuthData={pendingAuthData}
+        setPendingAuthData={setPendingAuthData}
+        onOpenTerms={() => setLegalScreen('terms')}
+        onOpenPrivacy={() => setLegalScreen('privacy')}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+      />
     );
   }
 
@@ -325,8 +215,10 @@ function MainApp() {
         {/* Floating Mini Timer bar when timer is running in background */}
         <FloatingTimerBar />
 
-        {/* 5-Tab Google/Play Store Style Bottom Navigation */}
-        <BottomNav activeTab={activeTab} onSelectTab={(tab) => setActiveTab(tab)} />
+        {/* 5-Tab Google/Play Store Style Bottom Navigation (Hidden on Profile & Analytics screen) */}
+        {activeTab !== 'profile' && activeTab !== 'analytics' && (
+          <BottomNav activeTab={activeTab} onSelectTab={(tab) => setActiveTab(tab)} />
+        )}
 
         {/* Full Study Timer Modal / Sheet */}
         <TimerModal />

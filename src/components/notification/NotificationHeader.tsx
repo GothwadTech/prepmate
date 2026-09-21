@@ -14,23 +14,26 @@ export const NotificationHeader: React.FC<NotificationHeaderProps> = ({
 }) => {
   return (
     <header
+      className="app-header"
+      id="notification-center-header"
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
         height: '54px',
-        backgroundColor: '#202124',
-        borderBottom: '1px solid #3C4043',
-        borderBottomLeftRadius: '18px',
-        borderBottomRightRadius: '18px',
+        backgroundColor: 'var(--header-bg)',
+        borderBottom: '1px solid var(--header-border)',
+        borderBottomLeftRadius: 'var(--header-radius)',
+        borderBottomRightRadius: 'var(--header-radius)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',
-        boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
+        boxShadow: 'var(--header-shadow)',
         flexShrink: 0,
         width: '100%',
         boxSizing: 'border-box',
+        transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
       }}
     >
       <button
@@ -41,22 +44,22 @@ export const NotificationHeader: React.FC<NotificationHeaderProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid #3C4043',
+          background: 'var(--header-btn-bg)',
+          border: '1px solid var(--header-btn-border)',
           borderRadius: '20px',
           padding: '6px 12px',
-          color: '#FFFFFF',
+          color: 'var(--header-text)',
           fontSize: '13px',
           fontWeight: 600,
           cursor: 'pointer',
         }}
       >
-        <ChevronLeftIcon size={16} />
+        <ChevronLeftIcon size={16} color="var(--header-text)" />
         <span>Back</span>
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '15px', fontWeight: 700, color: '#FFFFFF' }}>
+        <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--header-text)' }}>
           Notifications
         </span>
         {unreadCount > 0 && (
@@ -84,7 +87,7 @@ export const NotificationHeader: React.FC<NotificationHeaderProps> = ({
             style={{
               background: 'none',
               border: 'none',
-              color: '#60A5FA',
+              color: 'var(--primary)',
               fontSize: '12px',
               fontWeight: 700,
               cursor: 'pointer',

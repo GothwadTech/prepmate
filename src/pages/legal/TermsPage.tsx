@@ -14,8 +14,8 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBack }) => {
       id="terms-of-service-page"
       style={{
         minHeight: '100vh',
-        backgroundColor: '#202124',
-        color: '#E8EAED',
+        backgroundColor: 'var(--bg)',
+        color: 'var(--text-primary)',
         display: 'flex',
         flexDirection: 'column',
       }}

@@ -23,15 +23,15 @@ export const ProfileActiveHeader: React.FC<ProfileActiveHeaderProps> = ({
         top: 0,
         zIndex: 50,
         height: '54px',
-        backgroundColor: '#202124',
-        borderBottom: '1px solid #3C4043',
-        borderBottomLeftRadius: '18px',
-        borderBottomRightRadius: '18px',
+        backgroundColor: 'var(--header-bg)',
+        borderBottom: '1px solid var(--header-border)',
+        borderBottomLeftRadius: 'var(--header-radius)',
+        borderBottomRightRadius: 'var(--header-radius)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',
-        boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
+        boxShadow: 'var(--header-shadow)',
         transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
       }}
     >
@@ -43,21 +43,21 @@ export const ProfileActiveHeader: React.FC<ProfileActiveHeaderProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid #3C4043',
+          background: 'var(--header-btn-bg)',
+          border: '1px solid var(--header-btn-border)',
           borderRadius: '20px',
           padding: '6px 12px',
-          color: '#FFFFFF',
+          color: 'var(--header-text)',
           fontSize: '13px',
           fontWeight: 600,
           cursor: 'pointer',
         }}
       >
-        <ChevronLeftIcon size={16} />
+        <ChevronLeftIcon size={16} color="var(--header-text)" />
         <span>Back</span>
       </button>
 
-      <span style={{ fontSize: '15px', fontWeight: 700, color: '#FFFFFF' }}>
+      <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--header-text)' }}>
         Profile & Settings
       </span>
 
@@ -71,7 +71,7 @@ export const ProfileActiveHeader: React.FC<ProfileActiveHeaderProps> = ({
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#FFFFFF',
+            color: 'var(--header-text)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -80,7 +80,7 @@ export const ProfileActiveHeader: React.FC<ProfileActiveHeaderProps> = ({
             position: 'relative',
           }}
         >
-          <BellIcon size={20} color="#FFFFFF" />
+          <BellIcon size={20} color="var(--header-text)" />
           {unreadNotifCount > 0 && (
             <span
               id="header-unread-badge"
@@ -92,7 +92,7 @@ export const ProfileActiveHeader: React.FC<ProfileActiveHeaderProps> = ({
                 height: '8px',
                 borderRadius: '50%',
                 backgroundColor: '#EF4444',
-                border: '1.5px solid #202124',
+                border: '1.5px solid var(--header-bg)',
               }}
             />
           )}

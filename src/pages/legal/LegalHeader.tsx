@@ -16,15 +16,16 @@ export const LegalHeader: React.FC<LegalHeaderProps> = ({ title, onBack, backBtn
         top: 0,
         zIndex: 50,
         height: '54px',
-        backgroundColor: '#202124',
-        borderBottom: '1px solid #3C4043',
-        borderBottomLeftRadius: '18px',
-        borderBottomRightRadius: '18px',
+        backgroundColor: 'var(--header-bg)',
+        borderBottom: '1px solid var(--header-border)',
+        borderBottomLeftRadius: 'var(--header-radius)',
+        borderBottomRightRadius: 'var(--header-radius)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',
-        boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
+        boxShadow: 'var(--header-shadow)',
+        transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
       }}
     >
       <button
@@ -36,9 +37,9 @@ export const LegalHeader: React.FC<LegalHeaderProps> = ({ title, onBack, backBtn
           width: '38px',
           height: '38px',
           borderRadius: '50%',
-          backgroundColor: '#303134',
-          border: '1px solid #3C4043',
-          color: '#E8EAED',
+          backgroundColor: 'var(--header-btn-bg)',
+          border: '1px solid var(--header-btn-border)',
+          color: 'var(--header-text)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -46,14 +47,14 @@ export const LegalHeader: React.FC<LegalHeaderProps> = ({ title, onBack, backBtn
           transition: 'all 0.2s ease',
         }}
       >
-        <ArrowLeft size={20} />
+        <ArrowLeft size={20} color="var(--header-text)" />
       </button>
 
       <h1
         style={{
           fontSize: '17px',
           fontWeight: 700,
-          color: '#FFFFFF',
+          color: 'var(--header-text)',
           margin: 0,
           letterSpacing: '-0.2px',
         }}

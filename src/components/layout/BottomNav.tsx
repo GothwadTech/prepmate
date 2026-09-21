@@ -59,26 +59,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
       id="bottom-navigation-bar"
       role="navigation"
       aria-label="Main Navigation"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '100%',
-        maxWidth: '480px',
-        height: '60px',
-        backgroundColor: '#202124',
-        borderTop: '1px solid #3C4043',
-        borderTopLeftRadius: '18px',
-        borderTopRightRadius: '18px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-around',
-        padding: '4px 6px',
-        zIndex: 60,
-        boxShadow: '0 -3px 12px rgba(0, 0, 0, 0.25)',
-        transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
-      }}
     >
       {items.map((item) => {
         const isActive = activeTab === item.id;

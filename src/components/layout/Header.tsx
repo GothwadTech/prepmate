@@ -1,9 +1,7 @@
 import React from 'react';
 import { UserIcon, BellIcon } from '../icons/SvgIcons';
 import { useAuth } from '../../context/AuthContext';
-import { SyncStatus } from '../../types';
 import { ProfileActiveHeader } from './ProfileActiveHeader';
-import { SyncStatusPill } from './SyncStatusPill';
 
 interface HeaderProps {
   onOpenProfile: () => void;
@@ -11,10 +9,10 @@ interface HeaderProps {
   onBack?: () => void;
   onOpenNotifications: () => void;
   unreadNotifCount: number;
-  onOpenSyncQueue: () => void;
-  syncStatus: SyncStatus;
-  isOnline: boolean;
-  pendingCount: number;
+  onOpenSyncQueue?: () => void;
+  syncStatus?: any;
+  isOnline?: boolean;
+  pendingCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,10 +21,6 @@ export const Header: React.FC<HeaderProps> = ({
   onBack,
   onOpenNotifications,
   unreadNotifCount,
-  onOpenSyncQueue,
-  syncStatus,
-  isOnline,
-  pendingCount,
 }) => {
   const { user } = useAuth();
 
@@ -59,15 +53,15 @@ export const Header: React.FC<HeaderProps> = ({
         top: 0,
         zIndex: 50,
         height: '54px',
-        backgroundColor: '#202124',
-        borderBottom: '1px solid #3C4043',
-        borderBottomLeftRadius: '18px',
-        borderBottomRightRadius: '18px',
+        backgroundColor: 'var(--header-bg)',
+        borderBottom: '1px solid var(--header-border)',
+        borderBottomLeftRadius: 'var(--header-radius)',
+        borderBottomRightRadius: 'var(--header-radius)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',
-        boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
+        boxShadow: 'var(--header-shadow)',
         transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
       }}
     >
@@ -110,26 +104,19 @@ export const Header: React.FC<HeaderProps> = ({
         <span
           className="brand-name"
           style={{
-            fontSize: '18px',
+            fontSize: '19.5px',
             fontWeight: 800,
             letterSpacing: '-0.3px',
-            color: '#FFFFFF',
+            color: 'var(--header-text)',
             lineHeight: 1.2,
           }}
         >
-          Prepmate
+          PrepMate
         </span>
       </div>
 
-      {/* 2. Right: Sync Status, Clean SVG Notification Bell, Profile Avatar */}
-      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <SyncStatusPill
-          onOpenSyncQueue={onOpenSyncQueue}
-          syncStatus={syncStatus}
-          isOnline={isOnline}
-          pendingCount={pendingCount}
-        />
-
+      {/* 2. Right: Notification Bell & Profile Avatar (Wifi icon moved to Profile setting) */}
+      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <button
           type="button"
           onClick={onOpenNotifications}
@@ -139,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#FFFFFF',
+            color: 'var(--header-text)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -150,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
             transition: 'opacity var(--transition-fast)',
           }}
         >
-          <BellIcon size={20} color="#FFFFFF" />
+          <BellIcon size={20} color="var(--header-text)" />
           {unreadNotifCount > 0 && (
             <span
               id="header-unread-badge"
@@ -162,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
                 height: '8px',
                 borderRadius: '50%',
                 backgroundColor: '#EF4444',
-                border: '1.5px solid #202124',
+                border: '1.5px solid var(--header-bg)',
               }}
             />
           )}
@@ -178,9 +165,9 @@ export const Header: React.FC<HeaderProps> = ({
             width: '32px',
             height: '32px',
             borderRadius: '50%',
-            backgroundColor: 'rgba(255, 255, 255, 0.12)',
-            color: '#FFFFFF',
-            border: '1px solid #3C4043',
+            backgroundColor: 'var(--header-btn-bg)',
+            color: 'var(--header-text)',
+            border: '1px solid var(--header-btn-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -194,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({
           {user?.displayName ? (
             <span>{getInitials(user.displayName)}</span>
           ) : (
-            <UserIcon size={16} color="#FFFFFF" />
+            <UserIcon size={16} color="var(--header-text)" />
           )}
         </button>
       </div>

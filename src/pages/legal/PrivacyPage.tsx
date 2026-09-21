@@ -14,8 +14,8 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
       id="privacy-policy-page"
       style={{
         minHeight: '100vh',
-        backgroundColor: '#202124',
-        color: '#E8EAED',
+        backgroundColor: 'var(--bg)',
+        color: 'var(--text-primary)',
         display: 'flex',
         flexDirection: 'column',
       }}
