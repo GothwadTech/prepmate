@@ -108,7 +108,7 @@ export const AuthBrandingCard: React.FC<AuthBrandingCardProps> = ({
               cursor: 'pointer',
             }}
           >
-            www.gothwadtech.com
+            Gothwad Tech
           </a>{' '}
           in support of India&apos;s Atmanirbhar Bharat initiative.
         </span>

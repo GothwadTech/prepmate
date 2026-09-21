@@ -88,7 +88,7 @@ export const ProfileAccountActions: React.FC<ProfileAccountActionsProps> = ({
             rel="noopener noreferrer"
             style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'underline' }}
           >
-            www.gothwadtech.com
+            Gothwad Tech
           </a>{' '}
           for NEET Aspirants
         </p>

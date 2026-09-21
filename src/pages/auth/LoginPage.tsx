@@ -96,20 +96,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         boxSizing: 'border-box',
       }}
     >
-      {/* Top Bar with Cancel / Theme button */}
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '440px',
-          padding: '16px 20px 0 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          boxSizing: 'border-box',
-          zIndex: 10,
-        }}
-      >
-        {isForgotPassword ? (
+      {/* Top Bar with Cancel button (only in forgot password mode) */}
+      {isForgotPassword && (
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '440px',
+            padding: '16px 20px 0 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            boxSizing: 'border-box',
+            zIndex: 10,
+          }}
+        >
           <button
             type="button"
             onClick={() => {
@@ -134,36 +134,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           >
             CANCEL
           </button>
-        ) : (
-          <div />
-        )}
-
-        {onToggleTheme && (
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            id="login-theme-toggle-btn"
-            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label="Toggle Theme"
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--surface)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: '15px',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div
         style={{

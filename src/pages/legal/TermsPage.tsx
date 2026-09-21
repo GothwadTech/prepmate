@@ -71,7 +71,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBack }) => {
                 rel="noopener noreferrer"
                 style={{ color: '#0494F4', fontWeight: 600, textDecoration: 'none' }}
               >
-                www.gothwadtech.com
+                Gothwad Tech
               </a>{' '}
               • Last updated: 2026
             </div>

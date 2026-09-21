@@ -71,7 +71,7 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
                 rel="noopener noreferrer"
                 style={{ color: '#0494F4', fontWeight: 600, textDecoration: 'none' }}
               >
-                www.gothwadtech.com
+                Gothwad Tech
               </a>{' '}
               • Student Data Safe
             </div>

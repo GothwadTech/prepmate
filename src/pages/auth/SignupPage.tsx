@@ -88,7 +88,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
         boxSizing: 'border-box',
       }}
     >
-      {/* Top Bar with Cancel / Theme button */}
+      {/* Top Bar with Cancel button */}
       <div
         style={{
           width: '100%',
@@ -96,7 +96,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
           padding: '16px 20px 0 20px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           boxSizing: 'border-box',
           zIndex: 10,
         }}
@@ -121,32 +121,6 @@ export const SignupPage: React.FC<SignupPageProps> = ({
         >
           CANCEL
         </button>
-
-        {onToggleTheme && (
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            id="signup-theme-toggle-btn"
-            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label="Toggle Theme"
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--surface)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: '15px',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-        )}
       </div>
 
       <div
