@@ -7,6 +7,8 @@ interface VerificationPageProps {
   email: string;
   password?: string;
   onNavigateToLogin: (autofillData?: { email: string; password?: string }) => void;
+  onOpenTerms?: () => void;
+  onOpenPrivacy?: () => void;
   theme?: AppTheme;
   onToggleTheme?: () => void;
 }
@@ -15,6 +17,8 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
   email,
   password,
   onNavigateToLogin,
+  onOpenTerms,
+  onOpenPrivacy,
 }) => {
   const { resendVerification } = useAuth();
   const [resending, setResending] = useState(false);
@@ -394,10 +398,44 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
               margin: 0,
               maxWidth: '340px',
               fontWeight: 500,
-              opacity: 0.85,
+              opacity: 0.9,
             }}
           >
-            By using <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong>, you agree to our Terms of Service & Privacy Policy.
+            By using <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong>, you agree to our{' '}
+            <button
+              type="button"
+              onClick={onOpenTerms}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                color: 'var(--primary)',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: '12.5px',
+                textDecoration: 'underline',
+              }}
+            >
+              Terms of Service
+            </button>{' '}
+            &amp;{' '}
+            <button
+              type="button"
+              onClick={onOpenPrivacy}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                color: 'var(--primary)',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: '12.5px',
+                textDecoration: 'underline',
+              }}
+            >
+              Privacy Policy
+            </button>
+            .
           </p>
 
           <div
@@ -415,12 +453,27 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
                 fontSize: '12.5px',
                 fontWeight: 500,
                 color: 'var(--text-secondary)',
-                opacity: 0.85,
+                opacity: 0.9,
                 display: 'block',
                 lineHeight: 1.45,
               }}
             >
-              <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong> is proudly developed and managed by <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Gothwad</strong> in support of India's Atmanirbhar Bharat initiative.
+              <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong> is proudly developed and managed by{' '}
+              <a
+                href="https://gothwadtech.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                id="verification-gothwad-tech-link"
+                style={{
+                  color: 'var(--primary)',
+                  fontWeight: 700,
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                }}
+              >
+                Gothwad Tech
+              </a>{' '}
+              in support of India&apos;s Atmanirbhar Bharat initiative.
             </span>
           </div>
         </div>

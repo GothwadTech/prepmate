@@ -7,6 +7,8 @@ import { AppTheme } from '../../types';
 interface LoginPageProps {
   onNavigateToSignup: () => void;
   onNavigateToVerification?: (email: string, password?: string) => void;
+  onOpenTerms?: () => void;
+  onOpenPrivacy?: () => void;
   prefilledIdentifier?: string;
   prefilledPassword?: string;
   theme?: AppTheme;
@@ -94,6 +96,8 @@ const formatResetError = (err: any): string => {
 export const LoginPage: React.FC<LoginPageProps> = ({
   onNavigateToSignup,
   onNavigateToVerification,
+  onOpenTerms,
+  onOpenPrivacy,
   prefilledIdentifier = '',
   prefilledPassword = '',
 }) => {
@@ -640,42 +644,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               : 'Login'}
           </button>
 
-          {/* Quick Demo Mode for Preview / Offline use */}
-          {!isForgotPassword && (
-            <button
-              type="button"
-              onClick={async () => {
-                setLoading(true);
-                setError('');
-                try {
-                  await signIn('demo.aspirant@prepmate.app', 'demo1234');
-                } catch (err: any) {
-                  setError(formatAuthError(err));
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                backgroundColor: 'var(--surface-variant)',
-                color: 'var(--primary)',
-                fontSize: '13px',
-                fontWeight: 700,
-                borderRadius: '14px',
-                border: '1px dashed var(--primary)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
-            >
-              <span>Explore in Demo Mode (Instant Preview)</span>
-            </button>
-          )}
-
           {/* Back to Login link when in Forgot Password mode */}
           {isForgotPassword && (
             <div style={{ textAlign: 'center', marginTop: '6px' }}>
@@ -728,10 +696,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   margin: 0,
                   maxWidth: '340px',
                   fontWeight: 500,
-                  opacity: 0.85,
+                  opacity: 0.9,
                 }}
               >
-                By using <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong>, you agree to our Terms of Service & Privacy Policy.
+                By using <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong>, you agree to our{' '}
+                <button
+                  type="button"
+                  onClick={onOpenTerms}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    color: 'var(--primary)',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontSize: '12.5px',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Terms of Service
+                </button>{' '}
+                &amp;{' '}
+                <button
+                  type="button"
+                  onClick={onOpenPrivacy}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    color: 'var(--primary)',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontSize: '12.5px',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Privacy Policy
+                </button>
+                .
               </p>
 
               <div
@@ -749,12 +751,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     fontSize: '12.5px',
                     fontWeight: 500,
                     color: 'var(--text-secondary)',
-                    opacity: 0.85,
+                    opacity: 0.9,
                     display: 'block',
                     lineHeight: 1.45,
                   }}
                 >
-                  <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong> is proudly developed and managed by <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Gothwad</strong> in support of India's Atmanirbhar Bharat initiative.
+                  <strong style={{ color: 'var(--primary)', fontWeight: 700 }}>Prepmate</strong> is proudly developed and managed by{' '}
+                  <a
+                    href="https://gothwadtech.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    id="login-gothwad-tech-link"
+                    style={{
+                      color: 'var(--primary)',
+                      fontWeight: 700,
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Gothwad Tech
+                  </a>{' '}
+                  in support of India&apos;s Atmanirbhar Bharat initiative.
                 </span>
               </div>
             </div>

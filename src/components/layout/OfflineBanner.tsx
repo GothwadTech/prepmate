@@ -39,7 +39,7 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({
         fontWeight: 600,
         zIndex: 40,
         position: 'sticky',
-        top: '52px',
+        top: '54px',
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
       }}
     >

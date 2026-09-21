@@ -41,6 +41,8 @@ interface ProfilePageProps {
   onNavigateToAnalytics?: () => void;
   onOpenSyncInspector?: () => void;
   onOpenNotifications?: () => void;
+  onOpenTerms?: () => void;
+  onOpenPrivacy?: () => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
@@ -52,6 +54,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   onNavigateToAnalytics,
   onOpenSyncInspector,
   onOpenNotifications,
+  onOpenTerms,
+  onOpenPrivacy,
 }) => {
   const { user, logout, updateProfile, isFirebaseConfigured } = useAuth();
   const {
@@ -1151,10 +1155,51 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           <AwardIcon size={16} color="var(--primary)" />
           <strong style={{ color: 'var(--text-primary)' }}>Prepmate</strong>
         </div>
-        <p>Built with ❤️ by Gothwad Tech for NEET Aspirants</p>
-        <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-          Phase 13 (Analytics) & Phase 14 (Profile + Settings) Complete
-        </span>
+        <p>
+          Built with ❤️ by{' '}
+          <a
+            href="https://gothwadtech.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'underline' }}
+          >
+            Gothwad Tech
+          </a>{' '}
+          for NEET Aspirants
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+          <button
+            type="button"
+            onClick={onOpenTerms}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: 'var(--text-secondary)',
+              fontSize: '11px',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+            }}
+          >
+            Terms of Service
+          </button>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={onOpenPrivacy}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: 'var(--text-secondary)',
+              fontSize: '11px',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+            }}
+          >
+            Privacy Policy
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -66,9 +66,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: '480px',
-        height: '62px',
-        backgroundColor: 'var(--surface)',
-        borderTop: '1px solid var(--border)',
+        height: '60px',
+        backgroundColor: '#202124',
+        borderTop: '1px solid #3C4043',
         borderTopLeftRadius: '18px',
         borderTopRightRadius: '18px',
         display: 'flex',
@@ -76,7 +76,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
         justifyContent: 'space-around',
         padding: '4px 6px',
         zIndex: 60,
-        boxShadow: '0 -3px 12px rgba(0, 0, 0, 0.05)',
+        boxShadow: '0 -3px 12px rgba(0, 0, 0, 0.25)',
         transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
       }}
     >

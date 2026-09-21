@@ -43,16 +43,16 @@ export const Header: React.FC<HeaderProps> = ({
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        height: '52px',
-        backgroundColor: 'var(--surface)',
-        borderBottom: '1px solid var(--border)',
+        height: '54px',
+        backgroundColor: '#202124',
+        borderBottom: '1px solid #3C4043',
         borderBottomLeftRadius: '18px',
         borderBottomRightRadius: '18px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+        boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
         transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
       }}
     >
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
             fontSize: '18px',
             fontWeight: 800,
             letterSpacing: '-0.3px',
-            color: 'var(--text-primary)',
+            color: '#FFFFFF',
             lineHeight: 1.2,
           }}
         >

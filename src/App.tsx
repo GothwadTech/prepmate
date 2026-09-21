@@ -14,6 +14,8 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { VerificationPage } from './pages/auth/VerificationPage';
+import { TermsPage } from './pages/legal/TermsPage';
+import { PrivacyPage } from './pages/legal/PrivacyPage';
 import { ToastContainer } from './components/common/Toast';
 import { TimerModal } from './components/timer/TimerModal';
 import { FloatingTimerBar } from './components/timer/FloatingTimerBar';
@@ -63,6 +65,7 @@ function MainApp() {
   } = useData();
 
   const [authScreen, setAuthScreen] = useState<'login' | 'signup' | 'verification'>('login');
+  const [legalScreen, setLegalScreen] = useState<'terms' | 'privacy' | null>(null);
   const [pendingAuthData, setPendingAuthData] = useState<{ email: string; password?: string }>({
     email: '',
     password: '',
@@ -168,7 +171,24 @@ function MainApp() {
     );
   }
 
-  // 2. Unauthenticated Protected View: Show Login, Signup, or Email Verification Page
+  // 2. Legal Pages (Terms of Service & Privacy Policy)
+  if (legalScreen === 'terms') {
+    return (
+      <div className="app-viewport" id="prepmate-viewport">
+        <TermsPage onBack={() => setLegalScreen(null)} />
+      </div>
+    );
+  }
+
+  if (legalScreen === 'privacy') {
+    return (
+      <div className="app-viewport" id="prepmate-viewport">
+        <PrivacyPage onBack={() => setLegalScreen(null)} />
+      </div>
+    );
+  }
+
+  // 3. Unauthenticated Protected View: Show Login, Signup, or Email Verification Page
   if (!user) {
     return (
       <div className="app-viewport" id="prepmate-viewport">
@@ -180,6 +200,8 @@ function MainApp() {
                 setPendingAuthData({ email, password });
                 setAuthScreen('verification');
               }}
+              onOpenTerms={() => setLegalScreen('terms')}
+              onOpenPrivacy={() => setLegalScreen('privacy')}
               prefilledIdentifier={pendingAuthData.email}
               prefilledPassword={pendingAuthData.password}
               theme={theme}
@@ -192,6 +214,8 @@ function MainApp() {
                 setPendingAuthData({ email, password });
                 setAuthScreen('verification');
               }}
+              onOpenTerms={() => setLegalScreen('terms')}
+              onOpenPrivacy={() => setLegalScreen('privacy')}
               theme={theme}
               onToggleTheme={handleToggleTheme}
             />
@@ -208,6 +232,8 @@ function MainApp() {
                 }
                 setAuthScreen('login');
               }}
+              onOpenTerms={() => setLegalScreen('terms')}
+              onOpenPrivacy={() => setLegalScreen('privacy')}
               theme={theme}
               onToggleTheme={handleToggleTheme}
             />
@@ -217,7 +243,7 @@ function MainApp() {
     );
   }
 
-  // 3. Authenticated App Flow: 5 Protected Main Tabs
+  // 4. Authenticated App Flow: 5 Protected Main Tabs
   return (
     <div className="app-viewport" id="prepmate-viewport">
       <div className="app-container" id="prepmate-app-container">
@@ -285,6 +311,8 @@ function MainApp() {
               onNavigateToAnalytics={() => setActiveTab('analytics')}
               onOpenSyncInspector={() => setIsSyncModalOpen(true)}
               onOpenNotifications={() => setIsNotifModalOpen(true)}
+              onOpenTerms={() => setLegalScreen('terms')}
+              onOpenPrivacy={() => setLegalScreen('privacy')}
             />
           )}
 
