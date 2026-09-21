@@ -4,6 +4,7 @@ import { AppTheme } from '../../types';
 import { formatSignupError } from './signupErrorUtils';
 import { SignupForm } from './SignupForm';
 import { AuthBrandingCard } from './AuthBrandingCard';
+import { AuthBrandHeader } from './AuthBrandHeader';
 
 interface SignupPageProps {
   onNavigateToLogin: () => void;
@@ -19,6 +20,8 @@ export const SignupPage: React.FC<SignupPageProps> = ({
   onNavigateToVerification,
   onOpenTerms,
   onOpenPrivacy,
+  theme,
+  onToggleTheme,
 }) => {
   const { signUp } = useAuth();
   const [name, setName] = useState('');
@@ -85,11 +88,72 @@ export const SignupPage: React.FC<SignupPageProps> = ({
         boxSizing: 'border-box',
       }}
     >
+      {/* Top Bar with Cancel / Theme button */}
       <div
         style={{
           width: '100%',
           maxWidth: '440px',
-          padding: '40px 20px',
+          padding: '16px 20px 0 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxSizing: 'border-box',
+          zIndex: 10,
+        }}
+      >
+        <button
+          type="button"
+          onClick={onNavigateToLogin}
+          id="signup-cancel-btn"
+          style={{
+            padding: '7px 18px',
+            fontSize: '11px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.8px',
+            borderRadius: '9999px',
+            border: '1px solid var(--border)',
+            backgroundColor: 'var(--surface)',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          CANCEL
+        </button>
+
+        {onToggleTheme && (
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            id="signup-theme-toggle-btn"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle Theme"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '15px',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+        )}
+      </div>
+
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          padding: '12px 20px 40px 20px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -97,70 +161,19 @@ export const SignupPage: React.FC<SignupPageProps> = ({
         }}
       >
         {/* Brand Header */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-            marginBottom: '24px',
-          }}
-        >
-          <div
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, var(--primary) 0%, #0070BA 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              boxShadow: '0 8px 24px rgba(4, 148, 244, 0.35)',
-              marginBottom: '14px',
-            }}
-          >
-            <span style={{ fontSize: '28px' }}>🩺</span>
-          </div>
-
-          <h1
-            style={{
-              fontSize: '22px',
-              fontWeight: 900,
-              letterSpacing: '-0.5px',
-              color: 'var(--text-primary)',
-              margin: '0 0 6px 0',
-            }}
-          >
-            Create Aspirant Account
-          </h1>
-
-          <p
-            style={{
-              fontSize: '12.5px',
-              color: 'var(--text-secondary)',
-              lineHeight: 1.45,
-              maxWidth: '280px',
-              margin: 0,
-              fontWeight: 500,
-              opacity: 0.85,
-            }}
-          >
-            Join Prepmate to track daily syllabus, timers, and streaks.
-          </p>
-        </div>
+        <AuthBrandHeader
+          title="Create Aspirant Account"
+          subtitle="Join Prepmate to track daily syllabus, timers, and streaks."
+        />
 
         {/* Auth Switcher Tabs */}
         <div
           style={{
             width: '100%',
             display: 'flex',
-            gap: '8px',
-            marginBottom: '18px',
-            padding: '4px',
-            backgroundColor: 'var(--surface-variant)',
-            borderRadius: '14px',
-            border: '1px solid var(--border)',
+            gap: '12px',
+            marginBottom: '20px',
+            padding: '0',
             boxSizing: 'border-box',
           }}
         >
@@ -169,12 +182,12 @@ export const SignupPage: React.FC<SignupPageProps> = ({
             onClick={onNavigateToLogin}
             style={{
               flex: 1,
-              padding: '10px 0',
-              fontSize: '12px',
+              padding: '12px 0',
+              fontSize: '13px',
               fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: '0.8px',
-              borderRadius: '10px',
+              borderRadius: '14px',
               border: 'none',
               cursor: 'pointer',
               backgroundColor: 'transparent',
@@ -188,17 +201,17 @@ export const SignupPage: React.FC<SignupPageProps> = ({
             type="button"
             style={{
               flex: 1,
-              padding: '10px 0',
-              fontSize: '12px',
+              padding: '12px 0',
+              fontSize: '13px',
               fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: '0.8px',
-              borderRadius: '10px',
+              borderRadius: '14px',
               border: 'none',
               cursor: 'pointer',
               backgroundColor: 'var(--primary)',
               color: '#FFFFFF',
-              boxShadow: '0 2px 8px rgba(4, 148, 244, 0.28)',
+              boxShadow: '0 4px 14px rgba(4, 148, 244, 0.35)',
               transition: 'all 0.2s ease',
             }}
           >

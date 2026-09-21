@@ -22,6 +22,8 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
   onNavigateToLogin,
   onOpenTerms,
   onOpenPrivacy,
+  theme,
+  onToggleTheme,
 }) => {
   const { resendVerification } = useAuth();
   const [resending, setResending] = useState(false);
@@ -77,60 +79,142 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
         boxSizing: 'border-box',
       }}
     >
+      {/* Top Bar with Cancel / Theme button */}
       <div
         style={{
           width: '100%',
           maxWidth: '440px',
-          padding: '44px 20px',
+          padding: '16px 20px 0 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxSizing: 'border-box',
+          zIndex: 10,
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => onNavigateToLogin()}
+          id="verification-cancel-btn"
+          style={{
+            padding: '7px 18px',
+            fontSize: '11px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.8px',
+            borderRadius: '9999px',
+            border: '1px solid var(--border)',
+            backgroundColor: 'var(--surface)',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          CANCEL
+        </button>
+
+        {onToggleTheme && (
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            id="verification-theme-toggle-btn"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle Theme"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '15px',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+        )}
+      </div>
+
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          padding: '12px 20px 40px 20px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           boxSizing: 'border-box',
         }}
       >
-        {/* Animated Mail Icon Card */}
+        {/* Animated Mail Icon Card matching demo card */}
         <div
+          id="verification-header-card"
           style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '22px',
-            background: 'linear-gradient(135deg, var(--primary) 0%, #0070BA 100%)',
+            width: '100%',
+            backgroundColor: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '24px',
+            padding: '32px 20px 26px 20px',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FFFFFF',
-            boxShadow: '0 8px 24px rgba(4, 148, 244, 0.35)',
-            marginBottom: '16px',
+            textAlign: 'center',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+            marginBottom: '24px',
+            boxSizing: 'border-box',
+            transition: 'background-color var(--transition-normal), border-color var(--transition-normal)',
           }}
         >
-          <Mail size={32} />
+          <div
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '22px',
+              background: 'linear-gradient(135deg, var(--primary) 0%, #0070BA 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFFFFF',
+              boxShadow: '0 8px 24px rgba(4, 148, 244, 0.3)',
+              marginBottom: '16px',
+            }}
+          >
+            <Mail size={34} />
+          </div>
+
+          <h1
+            style={{
+              fontSize: '26px',
+              fontWeight: 800,
+              letterSpacing: '-0.5px',
+              color: 'var(--text-primary)',
+              margin: '0 0 8px 0',
+              lineHeight: 1.2,
+            }}
+          >
+            Verify Your Email
+          </h1>
+
+          <p
+            style={{
+              fontSize: '13px',
+              color: 'var(--text-secondary)',
+              textAlign: 'center',
+              lineHeight: 1.45,
+              margin: 0,
+              maxWidth: '300px',
+              fontWeight: 400,
+              opacity: 0.9,
+            }}
+          >
+            We have sent a verification link to your email address. Please verify to activate your account.
+          </p>
         </div>
-
-        <h1
-          style={{
-            fontSize: '22px',
-            fontWeight: 900,
-            letterSpacing: '-0.5px',
-            color: 'var(--text-primary)',
-            margin: '0 0 6px 0',
-            textAlign: 'center',
-          }}
-        >
-          Verify Your Email
-        </h1>
-
-        <p
-          style={{
-            fontSize: '13px',
-            color: 'var(--text-secondary)',
-            textAlign: 'center',
-            lineHeight: 1.5,
-            margin: '0 0 20px 0',
-            maxWidth: '320px',
-          }}
-        >
-          We have sent a verification link to your email address. Please verify to activate your account.
-        </p>
 
         {/* Feedback Messages */}
         {infoMessage && (

@@ -5,6 +5,7 @@ import { formatAuthError, formatResetError } from './authErrorUtils';
 import { LoginForm } from './LoginForm';
 import { ForgotPasswordView } from './ForgotPasswordView';
 import { AuthBrandingCard } from './AuthBrandingCard';
+import { AuthBrandHeader } from './AuthBrandHeader';
 
 interface LoginPageProps {
   onNavigateToSignup: () => void;
@@ -24,6 +25,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onOpenPrivacy,
   prefilledIdentifier = '',
   prefilledPassword = '',
+  theme,
+  onToggleTheme,
 }) => {
   const { signIn, resetPassword } = useAuth();
   const [identifier, setIdentifier] = useState(prefilledIdentifier);
@@ -93,72 +96,95 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         boxSizing: 'border-box',
       }}
     >
+      {/* Top Bar with Cancel / Theme button */}
       <div
         style={{
           width: '100%',
           maxWidth: '440px',
-          padding: '40px 20px',
+          padding: '16px 20px 0 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxSizing: 'border-box',
+          zIndex: 10,
+        }}
+      >
+        {isForgotPassword ? (
+          <button
+            type="button"
+            onClick={() => {
+              setIsForgotPassword(false);
+              setError('');
+              setSuccess(false);
+            }}
+            id="login-cancel-btn"
+            style={{
+              padding: '7px 18px',
+              fontSize: '11px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.8px',
+              borderRadius: '9999px',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            CANCEL
+          </button>
+        ) : (
+          <div />
+        )}
+
+        {onToggleTheme && (
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            id="login-theme-toggle-btn"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle Theme"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '15px',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+        )}
+      </div>
+
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          padding: '12px 20px 40px 20px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           boxSizing: 'border-box',
         }}
       >
-        {/* Brand Header */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-            marginBottom: '28px',
-          }}
-        >
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, var(--primary) 0%, #0070BA 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              boxShadow: '0 8px 24px rgba(4, 148, 244, 0.35)',
-              marginBottom: '16px',
-            }}
-          >
-            <span style={{ fontSize: '30px' }}>🩺</span>
-          </div>
-
-          <h1
-            style={{
-              fontSize: '24px',
-              fontWeight: 900,
-              letterSpacing: '-0.5px',
-              color: 'var(--text-primary)',
-              margin: '0 0 6px 0',
-            }}
-          >
-            {isForgotPassword ? 'Reset Password' : 'NEET Aspirant Portal'}
-          </h1>
-
-          <p
-            style={{
-              fontSize: '12.5px',
-              color: 'var(--text-secondary)',
-              lineHeight: 1.45,
-              maxWidth: '280px',
-              margin: 0,
-              fontWeight: 500,
-              opacity: 0.85,
-            }}
-          >
-            {isForgotPassword
+        {/* Brand Header Card */}
+        <AuthBrandHeader
+          title={isForgotPassword ? 'Reset Password' : 'PrepMate'}
+          subtitle={
+            isForgotPassword
               ? 'Reset password to access your account securely.'
-              : 'Your dedicated NEET UG study partner and daily progress tracker.'}
-          </p>
-        </div>
+              : 'Your dedicated NEET UG study partner and daily progress tracker.'
+          }
+        />
 
         {/* Auth Switcher Tabs */}
         {!isForgotPassword && (
@@ -166,12 +192,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             style={{
               width: '100%',
               display: 'flex',
-              gap: '8px',
+              gap: '12px',
               marginBottom: '20px',
-              padding: '4px',
-              backgroundColor: 'var(--surface-variant)',
-              borderRadius: '14px',
-              border: '1px solid var(--border)',
+              padding: '0',
               boxSizing: 'border-box',
             }}
           >
@@ -179,17 +202,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               type="button"
               style={{
                 flex: 1,
-                padding: '10px 0',
-                fontSize: '12px',
+                padding: '12px 0',
+                fontSize: '13px',
                 fontWeight: 800,
                 textTransform: 'uppercase',
                 letterSpacing: '0.8px',
-                borderRadius: '10px',
+                borderRadius: '14px',
                 border: 'none',
                 cursor: 'pointer',
                 backgroundColor: 'var(--primary)',
                 color: '#FFFFFF',
-                boxShadow: '0 2px 8px rgba(4, 148, 244, 0.28)',
+                boxShadow: '0 4px 14px rgba(4, 148, 244, 0.35)',
                 transition: 'all 0.2s ease',
               }}
             >
@@ -200,12 +223,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               onClick={onNavigateToSignup}
               style={{
                 flex: 1,
-                padding: '10px 0',
-                fontSize: '12px',
+                padding: '12px 0',
+                fontSize: '13px',
                 fontWeight: 800,
                 textTransform: 'uppercase',
                 letterSpacing: '0.8px',
-                borderRadius: '10px',
+                borderRadius: '14px',
                 border: 'none',
                 cursor: 'pointer',
                 backgroundColor: 'transparent',
