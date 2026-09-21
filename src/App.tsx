@@ -251,6 +251,7 @@ function MainApp() {
         <Header
           onOpenProfile={() => setActiveTab('profile')}
           isProfileActive={activeTab === 'profile'}
+          onBack={() => setActiveTab('home')}
           onOpenNotifications={() => setIsNotifModalOpen(true)}
           unreadNotifCount={unreadNotifCount}
           onOpenSyncQueue={() => setIsSyncModalOpen(true)}

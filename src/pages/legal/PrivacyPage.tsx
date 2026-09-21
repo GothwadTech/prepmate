@@ -312,7 +312,7 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
               marginTop: '4px',
             }}
           >
-            <span>Visit Gothwadtech.com</span>
+            <span>Visit www.gothwadtech.com</span>
             <ExternalLink size={15} />
           </a>
         </section>

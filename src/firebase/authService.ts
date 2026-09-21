@@ -270,7 +270,9 @@ export const authService = {
   },
 
   /**
-   * Send Password Reset Email with verified existence check
+   * Send Password Reset Email
+   * If identifier is an email: invokes standard Firebase Auth reset directly (or resolves via Firestore).
+   * If identifier is a username: resolves the registered email from Firestore first.
    */
   async sendPasswordReset(identifier: string): Promise<{ email: string }> {
     const clean = identifier.trim();
@@ -278,26 +280,45 @@ export const authService = {
       throw new Error('Please enter your registered email or username.');
     }
 
-    if (!isFirebaseConfigured || !auth || !db) {
+    if (!isFirebaseConfigured || !auth) {
       return { email: clean.includes('@') ? clean : `${clean}@example.com` };
     }
 
     const isEmail = clean.includes('@');
+    let emailToSend = clean;
 
-    // Strictly verify whether this email or username actually exists in our database!
-    const existingUser = await this.findUserByIdentifier(clean);
-    if (!existingUser || !existingUser.email) {
-      const err: any = new Error(
-        isEmail
-          ? 'No account found with this email address.'
-          : 'No account found with this username.'
-      );
-      err.code = 'auth/user-not-found';
-      throw err;
+    if (isEmail) {
+      emailToSend = clean.toLowerCase();
+    } else {
+      // Identifier is a username, resolve from Firestore
+      const existingUser = await this.findUserByIdentifier(clean);
+      if (!existingUser || !existingUser.email) {
+        const err: any = new Error('No account found with this username.');
+        err.code = 'auth/user-not-found';
+        throw err;
+      }
+      emailToSend = existingUser.email;
     }
 
-    await sendPasswordResetEmail(auth, existingUser.email);
-    return { email: existingUser.email };
+    // Call Firebase Auth's standard password reset email directly
+    try {
+      await sendPasswordResetEmail(auth, emailToSend);
+    } catch (firebaseErr: any) {
+      // Check if it's user-not-found from Firebase Auth
+      const code = String(firebaseErr.code || '').toLowerCase();
+      if (code.includes('user-not-found')) {
+        const err: any = new Error(
+          isEmail
+            ? 'No account found with this email address.'
+            : 'No account found with this username.'
+        );
+        err.code = 'auth/user-not-found';
+        throw err;
+      }
+      throw firebaseErr;
+    }
+
+    return { email: emailToSend };
   },
 
   /**

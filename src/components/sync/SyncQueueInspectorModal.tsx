@@ -12,6 +12,7 @@ import {
   SlidersIcon,
   CloudCheckIcon,
   SparklesIcon,
+  ChevronLeftIcon,
 } from '../icons/SvgIcons';
 import { QueuedMutation, ConflictResolutionLog, SyncStatus } from '../../types';
 
@@ -67,89 +68,109 @@ export const SyncQueueInspectorModal: React.FC<SyncQueueInspectorModalProps> = (
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        inset: 0,
+        backgroundColor: 'var(--background)',
         zIndex: 1100,
-        padding: '16px',
-        backdropFilter: 'blur(2px)',
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: '480px',
+        margin: '0 auto',
+        height: '100%',
+        overflow: 'hidden',
       }}
-      onClick={onClose}
-      id="sync-queue-inspector-overlay"
+      id="sync-queue-inspector-dialog"
     >
-      <div
+      {/* Standard Google-Style 54px Header */}
+      <header
         style={{
-          backgroundColor: 'var(--surface)',
-          borderRadius: 'var(--radius-lg)',
-          maxWidth: '440px',
-          width: '100%',
-          maxHeight: '90vh',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          height: '54px',
+          backgroundColor: '#202124',
+          borderBottom: '1px solid #3C4043',
+          borderBottomLeftRadius: '18px',
+          borderBottomRightRadius: '18px',
           display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.25)',
-          border: '1px solid var(--border)',
-          overflow: 'hidden',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
+          flexShrink: 0,
         }}
-        onClick={(e) => e.stopPropagation()}
-        id="sync-queue-inspector-dialog"
       >
-        {/* Header */}
-        <div
+        <button
+          type="button"
+          onClick={onClose}
+          id="close-queue-inspector-btn"
           style={{
-            padding: '14px 16px',
-            borderBottom: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'var(--surface-variant)',
+            gap: '6px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid #3C4043',
+            borderRadius: '20px',
+            padding: '6px 12px',
+            color: '#FFFFFF',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: isOnline ? 'var(--success-container)' : 'var(--warning-container)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: isOnline ? 'var(--success)' : 'var(--warning)',
-              }}
-            >
-              {isOnline ? <WifiIcon size={18} /> : <WifiOffIcon size={18} />}
-            </div>
-            <div>
-              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                Sync & Queue Manager
-              </h3>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                Phase 16: Local-First Offline & Conflict Engine
-              </div>
-            </div>
-          </div>
+          <ChevronLeftIcon size={16} />
+          <span>Back</span>
+        </button>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '15px', fontWeight: 700, color: '#FFFFFF' }}>
+            Sync & Network
+          </span>
+          <span
+            style={{
+              fontSize: '10.5px',
+              fontWeight: 800,
+              padding: '2px 7px',
+              borderRadius: '12px',
+              backgroundColor: isOnline ? 'rgba(52, 168, 83, 0.25)' : 'rgba(239, 68, 68, 0.25)',
+              color: isOnline ? '#34D399' : '#FCA5A5',
+              border: isOnline ? '1px solid rgba(52, 168, 83, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+            }}
+          >
+            {isOnline ? 'Online' : 'Offline'}
+          </span>
+        </div>
+
+        <div style={{ width: '64px', display: 'flex', justifyContent: 'flex-end' }}>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleSync}
+            disabled={syncing || !isOnline}
+            id="sync-now-header-btn"
             style={{
               background: 'none',
               border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
+              color: isOnline ? '#60A5FA' : '#6B7280',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: isOnline ? 'pointer' : 'not-allowed',
               padding: '4px',
             }}
-            id="close-queue-inspector-btn"
           >
-            <CloseIcon size={18} />
+            {syncing ? 'Syncing...' : 'Sync'}
           </button>
         </div>
+      </header>
 
+      {/* Main Scrollable Body */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
         {/* Status Bar */}
         <div
           style={{

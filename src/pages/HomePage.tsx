@@ -18,14 +18,18 @@ import {
   PlayIcon,
   BookIcon,
   BarChartIcon,
+  ShieldIcon,
+  TrophyIcon,
+  ActivityIcon,
+  CloseIcon,
 } from '../components/icons/SvgIcons';
 import { AppTab, UserStats, SubjectType } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useTimer } from '../context/TimerContext';
-import { StreakCard } from '../components/streak/StreakCard';
 import { WeeklyCalendarView } from '../components/streak/WeeklyCalendarView';
 import { ActivityHeatmap } from '../components/streak/ActivityHeatmap';
+import { STREAK_MILESTONES } from '../utils/streakUtils';
 
 interface HomePageProps {
   onNavigateTab: (tab: AppTab) => void;
@@ -67,7 +71,7 @@ const NEET_QUOTES = [
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
   const { user } = useAuth();
-  const { tasks, toggleTask, goals } = useData();
+  const { tasks, toggleTask, goals, streakStats, dailyLogs, useStreakShield } = useData();
   const {
     openTimer,
     isRunning,
@@ -81,10 +85,29 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [isRotatingQuote, setIsRotatingQuote] = useState(false);
   const [streakCalendarView, setStreakCalendarView] = useState<'weekly' | 'heatmap'>('weekly');
+  const [showMilestonesModal, setShowMilestonesModal] = useState(false);
+  const [shieldActivating, setShieldActivating] = useState(false);
 
   const mins = Math.floor(remainingSeconds / 60);
   const secs = remainingSeconds % 60;
   const timeFormatted = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+  const currentStreak = streakStats?.currentStreak || stats.streakDays || 0;
+  const shieldsAvailable = stats.streakShields ?? 1;
+
+  const nextMilestone =
+    STREAK_MILESTONES.find((m) => m.days > currentStreak) ||
+    STREAK_MILESTONES[STREAK_MILESTONES.length - 1];
+  const progressToNext = Math.min(100, Math.round((currentStreak / nextMilestone.days) * 100));
+
+  const handleUseShield = async () => {
+    setShieldActivating(true);
+    try {
+      await useStreakShield();
+    } finally {
+      setShieldActivating(false);
+    }
+  };
 
   // Time of day greeting
   const getGreeting = () => {
@@ -141,139 +164,428 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
   const currentQuote = NEET_QUOTES[quoteIndex];
 
   return (
-    <div id="home-dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* 1. Welcome Screen with User Name & NEET Target */}
-      <div className="banner-box" id="welcome-banner">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                {getGreeting()}
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>•</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{todayFormatted}</span>
-            </div>
-            <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+    <div id="home-dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* 1. Sleek, Slim & Lightweight Top Welcome Strip */}
+      <div
+        id="welcome-banner"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 14px',
+          backgroundColor: 'var(--surface)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-xs)',
+          gap: '10px',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              {getGreeting()}
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>•</span>
+            <h2 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {user?.displayName ? `${user.displayName} 👋` : 'Doctor Sahab 👋'}
             </h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Target NEET {user?.targetYear || stats.targetYear} • Aiming for {user?.targetScore || stats.targetScore}+ Marks
-            </p>
           </div>
-          <Badge variant="primary">🩺 AIIMS Aspirant</Badge>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+            NEET {user?.targetYear || stats.targetYear} • Target {user?.targetScore || stats.targetScore}+ Marks
+          </div>
         </div>
 
-        {/* NEET Countdown Banner Pill */}
+        {/* Compact Countdown Pill */}
         <div
           style={{
-            marginTop: '6px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'var(--surface)',
+            gap: '5px',
+            backgroundColor: 'var(--primary-container)',
             border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '8px 12px',
+            borderRadius: 'var(--radius-pill)',
+            padding: '5px 10px',
+            flexShrink: 0,
           }}
           id="neet-countdown-strip"
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CalendarIcon size={16} color="var(--primary)" />
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              NEET {user?.targetYear || stats.targetYear} Countdown
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: '12px',
-              fontWeight: 800,
-              color: 'var(--primary)',
-              background: 'var(--primary-container)',
-              padding: '2px 8px',
-              borderRadius: 'var(--radius-pill)',
-            }}
-          >
-            {getDaysToNeet()} Days Left
+          <CalendarIcon size={13} color="var(--primary)" />
+          <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--primary)', whiteSpace: 'nowrap' }}>
+            {getDaysToNeet()}d left
           </span>
         </div>
       </div>
 
-      {/* 2. Daily Overview Card (Today's Progress) */}
-      <Card
-        id="today-overview-card"
-        variant="hero"
-        title="Today's Overview"
-        subtitle="Daily preparation metrics & completion status"
-        action={
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)' }}>
+      {/* 2. Combined Daily Overview & Streak Hub Card */}
+      <div
+        id="today-streak-combined-card"
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border)',
+          padding: '14px 16px',
+          boxShadow: 'var(--shadow-xs)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}
+      >
+        {/* Header: Title + Overall % Done */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--primary-container)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary)',
+                flexShrink: 0,
+              }}
+            >
+              <ActivityIcon size={16} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '14.5px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                Today's Overview & Streak
+              </h3>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                Daily preparation & streak protection
+              </p>
+            </div>
+          </div>
+
+          <span
+            style={{
+              fontSize: '11.5px',
+              fontWeight: 800,
+              color: overallProgress === 100 ? 'var(--success)' : 'var(--primary)',
+              backgroundColor: overallProgress === 100 ? 'var(--success-container)' : 'var(--primary-container)',
+              padding: '3px 10px',
+              borderRadius: 'var(--radius-pill)',
+              border: '1px solid var(--border)',
+            }}
+          >
             {overallProgress}% Done
           </span>
-        }
-      >
-        <div className="progress-bar-wrap">
-          <div className="progress-track" style={{ height: '10px' }}>
+        </div>
+
+        {/* Sleek Progress Track */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div className="progress-track" style={{ height: '6px', borderRadius: '3px' }}>
             <div
               className="progress-fill"
               style={{
                 width: `${overallProgress}%`,
+                borderRadius: '3px',
                 background:
                   overallProgress === 100
                     ? 'var(--success)'
                     : 'linear-gradient(90deg, var(--primary) 0%, #34A853 100%)',
+                transition: 'width 0.4s ease',
               }}
             />
           </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+              {completedTasks} of {totalTasks} daily study tasks done
+            </span>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: overallProgress === 100 ? 'var(--success)' : 'var(--primary)',
+              }}
+            >
+              {overallProgress === 100 ? 'Goal Crushed! 🏆' : overallProgress >= 50 ? 'Great Momentum 🚀' : 'Keep Pushing 📚'}
+            </span>
+          </div>
         </div>
 
-        {/* Status label under progress bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-            {completedTasks} of {totalTasks} daily study tasks completed
-          </span>
-          <span
+        {/* 4-Stat Balanced Metrics Grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '8px',
+          }}
+        >
+          {/* Day Streak */}
+          <div
             style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: overallProgress === 100 ? 'var(--success)' : 'var(--primary)',
+              backgroundColor: 'var(--surface-variant)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '8px 4px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
             }}
           >
-            {overallProgress === 100 ? 'Goal Crushed! 🏆' : overallProgress >= 50 ? 'Great Momentum 🚀' : 'Keep Pushing 📚'}
-          </span>
-        </div>
-
-        {/* 3 Overview Stat Tiles */}
-        <div className="stat-grid" style={{ marginTop: '10px' }}>
-          <div className="stat-tile" id="stat-tile-streak">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--flame)' }}>
-              <FlameIcon size={18} />
-              <span className="stat-value" style={{ color: 'var(--flame)' }}>{stats.streakDays}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--flame)' }}>
+              <FlameIcon size={15} color="var(--flame)" />
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--flame)' }}>
+                {currentStreak}d
+              </span>
             </div>
-            <span className="stat-label">Day Streak</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              {streakStats?.todayCompleted ? 'Active' : 'Pending'}
+            </span>
           </div>
 
-          <div className="stat-tile" id="stat-tile-tasks">
-            <span className="stat-value">{completedTasks}/{totalTasks}</span>
-            <span className="stat-label">Tasks Done</span>
-          </div>
-
+          {/* Tasks Done */}
           <div
-            className="stat-tile"
-            id="stat-tile-time"
+            style={{
+              backgroundColor: 'var(--surface-variant)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '8px 4px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {completedTasks}/{totalTasks}
+            </span>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              Tasks Done
+            </span>
+          </div>
+
+          {/* Study Time */}
+          <div
             onClick={() => openTimer()}
-            style={{ cursor: 'pointer' }}
+            style={{
+              backgroundColor: 'var(--surface-variant)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '8px 4px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              cursor: 'pointer',
+            }}
             title="Tap to open Study Timer"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ClockIcon size={16} color="var(--primary)" />
-              <span className="stat-value">{Math.floor(stats.todayStudyMinutes / 60)}h {stats.todayStudyMinutes % 60}m</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+              <ClockIcon size={12} color="var(--primary)" />
+              <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {Math.floor(stats.todayStudyMinutes / 60)}h{stats.todayStudyMinutes % 60}m
+              </span>
             </div>
-            <span className="stat-label">Study Time ⏱️</span>
+            <span style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: 700 }}>
+              Timer ⏱️
+            </span>
+          </div>
+
+          {/* Shields */}
+          <div
+            style={{
+              backgroundColor: 'var(--surface-variant)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '8px 4px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--primary)' }}>
+              <ShieldIcon size={14} color="var(--primary)" />
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>
+                {shieldsAvailable}
+              </span>
+            </div>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              Shields
+            </span>
           </div>
         </div>
-      </Card>
 
-      {/* 3. Dynamic Streak + Shield Engine */}
-      <StreakCard />
+        {/* Milestone & Shield Action Footer Strip */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 10px',
+            backgroundColor: 'var(--surface-variant)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '11px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+            <TrophyIcon size={14} color="var(--warning)" />
+            <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Next: <strong style={{ color: 'var(--text-primary)' }}>{nextMilestone.title} ({currentStreak}/{nextMilestone.days}d)</strong>
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            {shieldsAvailable > 0 && !streakStats?.todayCompleted && (
+              <button
+                type="button"
+                onClick={handleUseShield}
+                disabled={shieldActivating}
+                style={{
+                  background: 'rgba(26, 115, 232, 0.15)',
+                  border: '1px solid rgba(26, 115, 232, 0.3)',
+                  color: 'var(--primary)',
+                  borderRadius: 'var(--radius-pill)',
+                  padding: '2px 8px',
+                  fontSize: '10.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {shieldActivating ? 'Freezing...' : 'Use Shield'}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowMilestonesModal(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '2px 4px',
+              }}
+            >
+              Milestones →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Milestones Modal */}
+      {showMilestonesModal && (
+        <div
+          id="milestones-modal-overlay"
+          onClick={() => setShowMilestonesModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+            backdropFilter: 'blur(3px)',
+          }}
+        >
+          <div
+            id="milestones-modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderRadius: 'var(--radius-lg)',
+              maxWidth: '440px',
+              width: '100%',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              boxShadow: 'var(--shadow-md)',
+              border: '1px solid var(--border)',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'rgba(249, 171, 0, 0.12)',
+                    color: 'var(--warning)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <TrophyIcon size={18} color="var(--warning)" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                    NEET Streak Hall of Fame
+                  </h3>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                    Consistency beats intensity for medical entrance
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMilestonesModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <CloseIcon size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px', overflowY: 'auto' }}>
+              {(streakStats?.allMilestones || STREAK_MILESTONES).map((milestone) => (
+                <div
+                  key={milestone.days}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: milestone.unlocked ? '1px solid rgba(249, 171, 0, 0.35)' : '1px solid var(--border)',
+                    backgroundColor: milestone.unlocked ? 'rgba(249, 171, 0, 0.08)' : 'var(--surface-variant)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '20px' }}>{milestone.badge}</span>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {milestone.title}
+                        </span>
+                        {milestone.unlocked && (
+                          <span style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 700 }}>
+                            ✓ Unlocked
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        {milestone.description}
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)' }}>
+                    {milestone.days}d
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 4. Habit Consistency: Weekly Routine & 14-Week Heatmap Matrix */}
       <div

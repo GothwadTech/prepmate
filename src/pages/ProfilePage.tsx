@@ -231,51 +231,29 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   return (
     <div id="profile-settings-page" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Back button if opened from header */}
-      {onBack && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 0' }}>
+      {/* Quick Analytics link if available */}
+      {onNavigateToAnalytics && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 2px' }}>
           <button
             type="button"
-            onClick={onBack}
+            onClick={onNavigateToAnalytics}
+            id="header-goto-analytics-btn"
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'none',
-              border: 'none',
+              background: 'var(--primary-container)',
+              border: '1px solid var(--border)',
               color: 'var(--primary)',
-              fontSize: '13px',
+              fontSize: '11.5px',
               fontWeight: 700,
               cursor: 'pointer',
-              padding: '4px 0',
+              padding: '5px 12px',
+              borderRadius: 'var(--radius-pill)',
             }}
-            id="profile-back-btn"
           >
-            <ChevronLeftIcon size={18} /> Back to Dashboard
+            <BarChartIcon size={14} /> View Analytics Breakdown
           </button>
-
-          {onNavigateToAnalytics && (
-            <button
-              type="button"
-              onClick={onNavigateToAnalytics}
-              id="header-goto-analytics-btn"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'var(--primary-container)',
-                border: '1px solid var(--border)',
-                color: 'var(--primary)',
-                fontSize: '11.5px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-pill)',
-              }}
-            >
-              <BarChartIcon size={14} /> View Analytics
-            </button>
-          )}
         </div>
       )}
 
