@@ -20,6 +20,7 @@ import {
 import { TaskItem, SubjectType, TaskType } from '../types';
 import { NEET_CHAPTERS, PRESET_TASK_TEMPLATES, QuickTemplate } from '../data/neetSyllabus';
 import { useTimer } from '../context/TimerContext';
+import { useBackHandler } from '../context/NavigationContext';
 
 interface TasksPageProps {
   tasks: TaskItem[];
@@ -47,6 +48,37 @@ export const TasksPage: React.FC<TasksPageProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Close modals on Android / browser back button
+  useBackHandler(
+    Boolean(deleteConfirmId),
+    () => {
+      setDeleteConfirmId(null);
+      return true;
+    },
+    110,
+    'task-delete-confirm'
+  );
+
+  useBackHandler(
+    Boolean(editingTask),
+    () => {
+      setEditingTask(null);
+      return true;
+    },
+    105,
+    'task-edit-modal'
+  );
+
+  useBackHandler(
+    isAddModalOpen,
+    () => {
+      setIsAddModalOpen(false);
+      return true;
+    },
+    100,
+    'task-add-modal'
+  );
 
   // Form State for Add / Edit
   const [formTitle, setFormTitle] = useState('');

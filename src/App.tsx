@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider, useData } from './context/DataContext';
-import { TimerProvider } from './context/TimerContext';
+import { TimerProvider, useTimer } from './context/TimerContext';
+import { NavigationProvider, useNavigation, useBackHandler } from './context/NavigationContext';
 import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
 import { HomePage } from './pages/HomePage';
@@ -26,6 +27,21 @@ import { AppTab, AppTheme } from './types';
 
 function MainApp() {
   const { user, loading, toasts, dismissToast } = useAuth();
+  const {
+    activeTab,
+    navigateToTab,
+    navigateBack,
+    legalScreen,
+    openLegalScreen,
+    closeLegalScreen,
+    authScreen,
+    setAuthScreen,
+    pendingAuthData,
+    setPendingAuthData,
+  } = useNavigation();
+
+  const { isTimerOpen, closeTimer } = useTimer();
+
   const {
     tasks,
     goals,
@@ -63,14 +79,39 @@ function MainApp() {
     clearConflictLogs,
   } = useData();
 
-  const [authScreen, setAuthScreen] = useState<'login' | 'signup' | 'verification'>('login');
-  const [legalScreen, setLegalScreen] = useState<'terms' | 'privacy' | null>(null);
-  const [pendingAuthData, setPendingAuthData] = useState<{ email: string; password?: string }>({
-    email: '',
-    password: '',
-  });
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+
+  // Register Back handlers so device back button closes open modals first
+  useBackHandler(
+    isTimerOpen,
+    () => {
+      closeTimer();
+      return true;
+    },
+    100,
+    'main-timer-modal'
+  );
+
+  useBackHandler(
+    isNotifModalOpen,
+    () => {
+      setIsNotifModalOpen(false);
+      return true;
+    },
+    100,
+    'main-notif-modal'
+  );
+
+  useBackHandler(
+    isSyncModalOpen,
+    () => {
+      setIsSyncModalOpen(false);
+      return true;
+    },
+    100,
+    'main-sync-modal'
+  );
 
   // Theme state persisted in localStorage
   const [theme, setTheme] = useState<AppTheme>(() => {
@@ -81,9 +122,6 @@ function MainApp() {
     }
     return 'light';
   });
-
-  // Active navigation tab
-  const [activeTab, setActiveTab] = useState<AppTab>('home');
 
   // Sync theme changes to html/body dataset
   useEffect(() => {
@@ -104,7 +142,7 @@ function MainApp() {
   if (legalScreen === 'terms') {
     return (
       <div className="app-viewport" id="prepmate-viewport">
-        <TermsPage onBack={() => setLegalScreen(null)} />
+        <TermsPage onBack={navigateBack} />
       </div>
     );
   }
@@ -112,7 +150,7 @@ function MainApp() {
   if (legalScreen === 'privacy') {
     return (
       <div className="app-viewport" id="prepmate-viewport">
-        <PrivacyPage onBack={() => setLegalScreen(null)} />
+        <PrivacyPage onBack={navigateBack} />
       </div>
     );
   }
@@ -125,8 +163,8 @@ function MainApp() {
         setAuthScreen={setAuthScreen}
         pendingAuthData={pendingAuthData}
         setPendingAuthData={setPendingAuthData}
-        onOpenTerms={() => setLegalScreen('terms')}
-        onOpenPrivacy={() => setLegalScreen('privacy')}
+        onOpenTerms={() => openLegalScreen('terms')}
+        onOpenPrivacy={() => openLegalScreen('privacy')}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />
@@ -139,9 +177,9 @@ function MainApp() {
       <div className="app-container" id="prepmate-app-container">
         {/* Sticky Google-Style Top Header */}
         <Header
-          onOpenProfile={() => setActiveTab('profile')}
+          onOpenProfile={() => navigateToTab('profile')}
           isProfileActive={activeTab === 'profile'}
-          onBack={() => setActiveTab('home')}
+          onBack={navigateBack}
           onOpenNotifications={() => setIsNotifModalOpen(true)}
           unreadNotifCount={unreadNotifCount}
           onOpenSyncQueue={() => setIsSyncModalOpen(true)}
@@ -163,7 +201,7 @@ function MainApp() {
         {/* Dynamic Page Content */}
         <main className="main-content" id="prepmate-main-content">
           {activeTab === 'home' && (
-            <HomePage onNavigateTab={(tab) => setActiveTab(tab)} stats={stats} />
+            <HomePage onNavigateTab={(tab) => navigateToTab(tab)} stats={stats} />
           )}
 
           {activeTab === 'tasks' && (
@@ -189,7 +227,7 @@ function MainApp() {
           {activeTab === 'partners' && <PartnersPage stats={stats} />}
 
           {activeTab === 'syllabus' && (
-            <SyllabusPage onNavigateToTasks={() => setActiveTab('tasks')} />
+            <SyllabusPage onNavigateToTasks={() => navigateToTab('tasks')} />
           )}
 
           {activeTab === 'profile' && (
@@ -198,17 +236,17 @@ function MainApp() {
               onToggleTheme={handleToggleTheme}
               stats={stats}
               onUpdateStats={updateStats}
-              onBack={() => setActiveTab('home')}
-              onNavigateToAnalytics={() => setActiveTab('analytics')}
+              onBack={navigateBack}
+              onNavigateToAnalytics={() => navigateToTab('analytics')}
               onOpenSyncInspector={() => setIsSyncModalOpen(true)}
               onOpenNotifications={() => setIsNotifModalOpen(true)}
-              onOpenTerms={() => setLegalScreen('terms')}
-              onOpenPrivacy={() => setLegalScreen('privacy')}
+              onOpenTerms={() => openLegalScreen('terms')}
+              onOpenPrivacy={() => openLegalScreen('privacy')}
             />
           )}
 
           {activeTab === 'analytics' && (
-            <AnalyticsPage onBack={() => setActiveTab('home')} />
+            <AnalyticsPage onBack={navigateBack} />
           )}
         </main>
 
@@ -217,7 +255,7 @@ function MainApp() {
 
         {/* 5-Tab Google/Play Store Style Bottom Navigation (Hidden on Profile & Analytics screen) */}
         {activeTab !== 'profile' && activeTab !== 'analytics' && (
-          <BottomNav activeTab={activeTab} onSelectTab={(tab) => setActiveTab(tab)} />
+          <BottomNav activeTab={activeTab} onSelectTab={(tab) => navigateToTab(tab)} />
         )}
 
         {/* Full Study Timer Modal / Sheet */}
@@ -234,7 +272,7 @@ function MainApp() {
           onDeleteNotification={deleteNotification}
           onClearAll={clearAllNotifs}
           onNavigateTab={(tab) => {
-            setActiveTab(tab);
+            navigateToTab(tab);
             setIsNotifModalOpen(false);
           }}
           onSendTestNotification={sendTestNotification}
@@ -271,7 +309,9 @@ export default function App() {
       <AuthProvider>
         <DataProvider>
           <TimerProvider>
-            <MainApp />
+            <NavigationProvider>
+              <MainApp />
+            </NavigationProvider>
           </TimerProvider>
         </DataProvider>
       </AuthProvider>

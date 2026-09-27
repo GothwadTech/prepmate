@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useBackHandler } from '../../context/NavigationContext';
 import { AppTheme } from '../../types';
 import { formatAuthError, formatResetError } from './authErrorUtils';
 import { LoginForm } from './LoginForm';
@@ -38,6 +39,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [success, setSuccess] = useState(false);
   const [resetSentToEmail, setResetSentToEmail] = useState('');
+
+  // Close forgot password view on Android / browser back button
+  useBackHandler(
+    isForgotPassword,
+    () => {
+      setIsForgotPassword(false);
+      setError('');
+      return true;
+    },
+    100,
+    'login-forgot-password'
+  );
 
   // Sync prefilled credentials if props update
   useEffect(() => {

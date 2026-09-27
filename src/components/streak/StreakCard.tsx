@@ -5,11 +5,23 @@ import { FlameIcon, ShieldIcon, TrophyIcon, ActivityIcon } from '../icons/SvgIco
 import { STREAK_MILESTONES } from '../../utils/streakUtils';
 import { Badge } from '../common/Badge';
 import { StreakMilestonesModal } from './StreakMilestonesModal';
+import { useBackHandler } from '../../context/NavigationContext';
 
 export const StreakCard: React.FC = () => {
   const { streakStats, stats, dailyLogs, useStreakShield } = useData();
   const [showMilestonesModal, setShowMilestonesModal] = useState(false);
   const [shieldActivating, setShieldActivating] = useState(false);
+
+  // Close milestones modal on back button
+  useBackHandler(
+    showMilestonesModal,
+    () => {
+      setShowMilestonesModal(false);
+      return true;
+    },
+    100,
+    'streak-milestones-modal'
+  );
 
   const todayLog = dailyLogs.find((l) => l.date === new Date().toISOString().split('T')[0]);
   const isTodayQualifying = streakStats.todayCompleted;

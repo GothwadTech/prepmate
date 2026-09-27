@@ -4,6 +4,7 @@ import { GoalsIcon } from '../components/icons/SvgIcons';
 import { GoalItem, SubjectType } from '../types';
 import { NEET_PREMADE_GOAL_TEMPLATES, NEETGoalTemplate } from '../data/neetGoalTemplates';
 import { useTimer } from '../context/TimerContext';
+import { useBackHandler } from '../context/NavigationContext';
 import { GoalsHeaderBanner } from '../components/goals/GoalsHeaderBanner';
 import { GoalsFilterBar } from '../components/goals/GoalsFilterBar';
 import { GoalCardItem } from '../components/goals/GoalCardItem';
@@ -44,6 +45,28 @@ export const GoalsPage: React.FC<GoalsPageProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<GoalItem | null>(null);
   const [goalToDelete, setGoalToDelete] = useState<GoalItem | null>(null);
+
+  // Close modals on Android / browser back button
+  useBackHandler(
+    Boolean(goalToDelete),
+    () => {
+      setGoalToDelete(null);
+      return true;
+    },
+    110,
+    'goal-delete-modal'
+  );
+
+  useBackHandler(
+    isModalOpen,
+    () => {
+      setIsModalOpen(false);
+      setEditingGoal(null);
+      return true;
+    },
+    100,
+    'goal-form-modal'
+  );
 
   // Form states
   const [formTitle, setFormTitle] = useState('');

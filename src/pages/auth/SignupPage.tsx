@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useBackHandler } from '../../context/NavigationContext';
 import { AppTheme } from '../../types';
 import { formatSignupError } from './signupErrorUtils';
 import { SignupForm } from './SignupForm';
@@ -33,6 +34,17 @@ export const SignupPage: React.FC<SignupPageProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Navigate back to login on Android / browser back button
+  useBackHandler(
+    true,
+    () => {
+      onNavigateToLogin();
+      return true;
+    },
+    80,
+    'signup-back-to-login'
+  );
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

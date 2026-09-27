@@ -19,6 +19,7 @@ import {
 import { PartnerProfile, UserStats } from '../types';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import { useBackHandler } from '../context/NavigationContext';
 import { PartnerSearchCard } from '../components/partner/PartnerSearchCard';
 import { PartnerRequestsList } from '../components/partner/PartnerRequestsList';
 import { PartnerProfileModal } from '../components/partner/PartnerProfileModal';
@@ -55,6 +56,27 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
 
   const [showEndConfirm, setShowEndConfirm] = useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+
+  // Close modals on Android / browser back button
+  useBackHandler(
+    showEndConfirm,
+    () => {
+      setShowEndConfirm(false);
+      return true;
+    },
+    110,
+    'partner-end-confirm'
+  );
+
+  useBackHandler(
+    showProfileModal,
+    () => {
+      setShowProfileModal(false);
+      return true;
+    },
+    100,
+    'partner-profile-modal'
+  );
 
   // Fallback demo partner for VS preview if none is connected yet
   const displayPartner: PartnerProfile = activePartner || {

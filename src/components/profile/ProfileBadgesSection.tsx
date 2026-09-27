@@ -4,6 +4,7 @@ import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 import { CheckIcon } from '../icons/SvgIcons';
 import { AchievementBadge } from '../../types';
+import { useBackHandler } from '../../context/NavigationContext';
 
 interface ProfileBadgesSectionProps {
   badges: AchievementBadge[];
@@ -12,6 +13,17 @@ interface ProfileBadgesSectionProps {
 export const ProfileBadgesSection: React.FC<ProfileBadgesSectionProps> = ({ badges }) => {
   const [activeBadgeTab, setActiveBadgeTab] = useState<'all' | 'unlocked' | 'in_progress'>('all');
   const [selectedBadge, setSelectedBadge] = useState<AchievementBadge | null>(null);
+
+  // Close badge detail modal on back button
+  useBackHandler(
+    Boolean(selectedBadge),
+    () => {
+      setSelectedBadge(null);
+      return true;
+    },
+    100,
+    'profile-badge-modal'
+  );
 
   const unlockedBadgesCount = badges.filter((b) => b.unlocked).length;
 

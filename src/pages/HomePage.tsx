@@ -4,6 +4,7 @@ import { AppTab, UserStats, SubjectType } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useTimer } from '../context/TimerContext';
+import { useBackHandler } from '../context/NavigationContext';
 import { StreakMilestonesModal } from '../components/streak/StreakMilestonesModal';
 import { HomeWelcomeStrip } from '../components/home/HomeWelcomeStrip';
 import { HomeOverviewRoutineHub } from '../components/home/HomeOverviewRoutineHub';
@@ -32,6 +33,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
 
   const [showMilestonesModal, setShowMilestonesModal] = useState(false);
   const [shieldActivating, setShieldActivating] = useState(false);
+
+  // Close milestones modal on back button
+  useBackHandler(
+    showMilestonesModal,
+    () => {
+      setShowMilestonesModal(false);
+      return true;
+    },
+    100,
+    'home-milestones-modal'
+  );
 
   const mins = Math.floor(remainingSeconds / 60);
   const secs = remainingSeconds % 60;

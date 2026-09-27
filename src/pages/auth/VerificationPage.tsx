@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useBackHandler } from '../../context/NavigationContext';
 import { AppTheme } from '../../types';
 import { AuthBrandingCard } from './AuthBrandingCard';
 import { VerificationInstructions } from './VerificationInstructions';
@@ -30,6 +31,17 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
   const [resendCooldown, setResendCooldown] = useState(0);
   const [infoMessage, setInfoMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Navigate back to login on Android / browser back button
+  useBackHandler(
+    true,
+    () => {
+      onNavigateToLogin({ email, password });
+      return true;
+    },
+    80,
+    'verification-back-to-login'
+  );
 
   useEffect(() => {
     if (resendCooldown <= 0) return;

@@ -5,6 +5,7 @@ import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { CreateChallengeModal } from './CreateChallengeModal';
+import { useBackHandler } from '../../context/NavigationContext';
 import {
   TrophyIcon,
   FlameIcon,
@@ -30,6 +31,17 @@ export const PartnerChallengesView: React.FC<PartnerChallengesViewProps> = ({
   const [challenges, setChallenges] = useState<PartnerChallenge[]>(() => getStoredChallenges());
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'available' | 'completed'>('active');
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+
+  // Close create challenge modal on Android / browser back button
+  useBackHandler(
+    showCreateModal,
+    () => {
+      setShowCreateModal(false);
+      return true;
+    },
+    100,
+    'create-challenge-modal'
+  );
 
   // Sync with storage on mount
   useEffect(() => {

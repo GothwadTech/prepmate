@@ -5,6 +5,7 @@ import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { ScoreExplanationModal } from './ScoreExplanationModal';
+import { useBackHandler } from '../../context/NavigationContext';
 import {
   TrophyIcon,
   FlameIcon,
@@ -37,6 +38,17 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
 }) => {
   const [filter, setFilter] = useState<LeaderboardFilter>('all');
   const [showFormulaModal, setShowFormulaModal] = useState<boolean>(false);
+
+  // Close score explanation modal on back button
+  useBackHandler(
+    showFormulaModal,
+    () => {
+      setShowFormulaModal(false);
+      return true;
+    },
+    100,
+    'formula-explanation-modal'
+  );
 
   // Compute current user's weekly study hours & tasks from dailyLogs or stats
   const { userWeeklyHours, userWeeklyTasks } = useMemo(() => {

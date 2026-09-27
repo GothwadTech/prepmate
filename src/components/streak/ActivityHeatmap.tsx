@@ -4,6 +4,7 @@ import { useData } from '../../context/DataContext';
 import { generateHeatmapGrid, HeatmapDayCell, formatMinutesToHours } from '../../utils/streakUtils';
 import { ActivityIcon } from '../icons/SvgIcons';
 import { HeatmapDayModal } from './HeatmapDayModal';
+import { useBackHandler } from '../../context/NavigationContext';
 
 export const ActivityHeatmap: React.FC = () => {
   const { dailyLogs, streakStats, saveDailyReflection } = useData();
@@ -11,6 +12,18 @@ export const ActivityHeatmap: React.FC = () => {
   const [reflectionText, setReflectionText] = useState('');
   const [isEditingReflection, setIsEditingReflection] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Close heatmap day reflection modal on back button
+  useBackHandler(
+    Boolean(selectedDay),
+    () => {
+      setSelectedDay(null);
+      setIsEditingReflection(false);
+      return true;
+    },
+    100,
+    'heatmap-day-modal'
+  );
 
   // Generate 14-week grid
   const weeks = useMemo(() => {
