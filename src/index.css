@@ -302,7 +302,7 @@ html, body {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 2px 0 3px 0;
+  padding: 4px 0 4px 0;
   color: var(--text-secondary);
   font-family: inherit;
   gap: 2px;
@@ -314,14 +314,14 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 28px;
+  width: 38px;
+  height: 25px;
   border-radius: var(--radius-pill);
   transition: background-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .nav-item:active .nav-icon-wrap {
-  transform: scale(0.95);
+  transform: scale(0.94);
 }
 
 .nav-item.active .nav-icon-wrap {
@@ -334,7 +334,7 @@ html, body {
 }
 
 .nav-label {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: 0.1px;

@@ -29,33 +29,33 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
     {
       id: 'home',
       label: 'Home',
-      icon: (active) => <HomeIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <HomeIcon size={21} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
     {
       id: 'tasks',
       label: 'Tasks',
-      icon: (active) => <TasksIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <TasksIcon size={21} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
     {
       id: 'timer',
       label: 'Timer',
-      icon: (active) => <ClockIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <ClockIcon size={21} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
     {
       id: 'goals',
       label: 'Goals',
-      icon: (active) => <GoalsIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <GoalsIcon size={21} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
     {
       id: 'partners',
       label: 'Partners',
-      icon: (active) => <PartnersIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <PartnersIcon size={21} color={active ? 'var(--primary)' : 'currentColor'} />,
       badge: pendingPartnerRequestsCount,
     },
     {
       id: 'syllabus',
       label: 'Syllabus',
-      icon: (active) => <BookIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <BookIcon size={21} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
   ];
 
@@ -83,10 +83,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
                 <span
                   style={{
                     position: 'absolute',
-                    top: '-2px',
-                    right: '2px',
-                    minWidth: '15px',
-                    height: '15px',
+                    top: '-1px',
+                    right: '1px',
+                    minWidth: '14px',
+                    height: '14px',
                     padding: '0 3px',
                     borderRadius: 'var(--radius-pill)',
                     backgroundColor: 'var(--danger)',
@@ -96,7 +96,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 1px 4px rgba(234, 67, 53, 0.4)',
+                    boxShadow: '0 1px 3px rgba(234, 67, 53, 0.4)',
                   }}
                 >
                   {item.badge}
