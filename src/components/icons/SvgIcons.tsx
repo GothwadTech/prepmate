@@ -120,6 +120,18 @@ export const ChevronLeftIcon: React.FC<IconProps> = ({ size = 24, color = 'curre
   </svg>
 );
 
+export const ChevronDownIcon: React.FC<IconProps> = ({ size = 24, color = 'currentColor', className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+export const ChevronUpIcon: React.FC<IconProps> = ({ size = 24, color = 'currentColor', className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+);
+
 export const SparklesIcon: React.FC<IconProps> = ({ size = 24, color = 'currentColor', className = '', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <path d="M12 2l2.4 5.2 5.6 1.8-4.2 4 1.2 5.8-5-3-5 3 1.2-5.8-4.2-4 5.6-1.8z" />

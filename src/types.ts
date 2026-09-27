@@ -3,7 +3,7 @@
  * Project by Gothwad Tech for NEET Aspirants
  */
 
-export type AppTab = 'home' | 'tasks' | 'goals' | 'partners' | 'syllabus' | 'profile' | 'analytics';
+export type AppTab = 'home' | 'tasks' | 'goals' | 'timer' | 'partners' | 'syllabus' | 'profile' | 'analytics';
 
 export type AppTheme = 'light' | 'dark';
 

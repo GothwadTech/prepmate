@@ -12,6 +12,7 @@ import { PartnersPage } from './pages/PartnersPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SyllabusPage } from './pages/SyllabusPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { TimerPage } from './pages/TimerPage';
 import { TermsPage } from './pages/legal/TermsPage';
 import { PrivacyPage } from './pages/legal/PrivacyPage';
 import { AppLoadingScreen } from './components/layout/AppLoadingScreen';
@@ -224,6 +225,8 @@ function MainApp() {
             />
           )}
 
+          {activeTab === 'timer' && <TimerPage />}
+
           {activeTab === 'partners' && <PartnersPage stats={stats} />}
 
           {activeTab === 'syllabus' && (
@@ -251,7 +254,9 @@ function MainApp() {
         </main>
 
         {/* Floating Mini Timer bar when timer is running in background */}
-        <FloatingTimerBar />
+        {activeTab !== 'timer' && (
+          <FloatingTimerBar onNavigateToTimer={() => navigateToTab('timer')} />
+        )}
 
         {/* 5-Tab Google/Play Store Style Bottom Navigation (Hidden on Profile & Analytics screen) */}
         {activeTab !== 'profile' && activeTab !== 'analytics' && (

@@ -1,18 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
-import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import {
   BookIcon,
   CheckIcon,
-  SearchIcon,
-  ClockIcon,
   FlameIcon,
   PlusIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  AwardIcon,
   SparklesIcon,
 } from '../components/icons/SvgIcons';
-import { NEET_CHAPTERS, ChapterInfo } from '../data/neetSyllabus';
+import {
+  getChaptersForGrade,
+  DetailedChapter,
+  SyllabusGradeFilter,
+  CLASS_11_SYLLABUS,
+  CLASS_12_SYLLABUS,
+} from '../data/neetSyllabus';
 import { SubjectType } from '../types';
 import { useData } from '../context/DataContext';
 
@@ -22,9 +28,22 @@ interface SyllabusPageProps {
 
 export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks }) => {
   const { addTask } = useData();
+
+  // Grade filter: 11th, 12th, or Dropper (11+12)
+  const [selectedGrade, setSelectedGrade] = useState<SyllabusGradeFilter>(() => {
+    try {
+      const saved = localStorage.getItem('prepmate_syllabus_grade');
+      if (saved === '11th' || saved === '12th' || saved === 'dropper') return saved;
+    } catch {
+      // ignore
+    }
+    return 'dropper';
+  });
+
   const [selectedSubject, setSelectedSubject] = useState<'All' | SubjectType>('All');
   const [highYieldOnly, setHighYieldOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedChapterId, setExpandedChapterId] = useState<string | null>(null);
 
   // Persist completed chapters in localStorage
   const [completedChapters, setCompletedChapters] = useState<Record<string, boolean>>(() => {
@@ -36,9 +55,18 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
     }
   });
 
-  const toggleChapterComplete = (chapterName: string) => {
+  const handleSelectGrade = (grade: SyllabusGradeFilter) => {
+    setSelectedGrade(grade);
+    try {
+      localStorage.setItem('prepmate_syllabus_grade', grade);
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggleChapterComplete = (chapterId: string) => {
     setCompletedChapters((prev) => {
-      const updated = { ...prev, [chapterName]: !prev[chapterName] };
+      const updated = { ...prev, [chapterId]: !prev[chapterId] };
       try {
         localStorage.setItem('prepmate_completed_chapters', JSON.stringify(updated));
       } catch {
@@ -48,51 +76,50 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
     });
   };
 
-  // Compile all chapters list with their subject
-  const allChaptersWithSubject = useMemo(() => {
-    const list: Array<ChapterInfo & { subject: SubjectType }> = [];
-    (Object.keys(NEET_CHAPTERS) as SubjectType[]).forEach((subj) => {
-      NEET_CHAPTERS[subj].forEach((chap) => {
-        list.push({ ...chap, subject: subj });
-      });
-    });
-    return list;
-  }, []);
+  // Get active chapters based on selected grade (11th, 12th, or Dropper)
+  const currentGradeChapters = useMemo(() => {
+    return getChaptersForGrade(selectedGrade);
+  }, [selectedGrade]);
 
-  // Filtered chapters
+  // Filtered chapters based on search, subject, and high yield
   const filteredChapters = useMemo(() => {
-    return allChaptersWithSubject.filter((chap) => {
+    return currentGradeChapters.filter((chap) => {
       if (selectedSubject !== 'All' && chap.subject !== selectedSubject) return false;
-      if (highYieldOnly && chap.weightage !== 'High') return false;
+      if (highYieldOnly && !chap.highYield) return false;
       if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesName = chap.name.toLowerCase().includes(query);
-        const matchesSubject = chap.subject.toLowerCase().includes(query);
-        const matchesGrade = chap.classGrade.toLowerCase().includes(query);
-        return matchesName || matchesSubject || matchesGrade;
+        const q = searchQuery.toLowerCase();
+        const matchesName = chap.name.toLowerCase().includes(q);
+        const matchesUnit = chap.unitName.toLowerCase().includes(q);
+        const matchesSubject = chap.subject.toLowerCase().includes(q);
+        const matchesBranch = chap.branch.toLowerCase().includes(q);
+        const matchesTopics = chap.topics.some((t) => t.toLowerCase().includes(q));
+        return matchesName || matchesUnit || matchesSubject || matchesBranch || matchesTopics;
       }
       return true;
     });
-  }, [allChaptersWithSubject, selectedSubject, highYieldOnly, searchQuery]);
+  }, [currentGradeChapters, selectedSubject, highYieldOnly, searchQuery]);
 
-  // Statistics
-  const totalCount = allChaptersWithSubject.length;
-  const completedCount = allChaptersWithSubject.filter((c) => completedChapters[c.name]).length;
-  const progressPercent = Math.round((completedCount / (totalCount || 1)) * 100);
+  // Stats for the active grade selection
+  const totalCount = currentGradeChapters.length;
+  const completedCount = currentGradeChapters.filter((c) => completedChapters[c.id]).length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  const physicsTotal = NEET_CHAPTERS.Physics.length;
-  const physicsDone = NEET_CHAPTERS.Physics.filter((c) => completedChapters[c.name]).length;
+  const physicsChapters = currentGradeChapters.filter((c) => c.subject === 'Physics');
+  const physicsDone = physicsChapters.filter((c) => completedChapters[c.id]).length;
+  const physicsPercent = physicsChapters.length > 0 ? Math.round((physicsDone / physicsChapters.length) * 100) : 0;
 
-  const chemistryTotal = NEET_CHAPTERS.Chemistry.length;
-  const chemistryDone = NEET_CHAPTERS.Chemistry.filter((c) => completedChapters[c.name]).length;
+  const chemistryChapters = currentGradeChapters.filter((c) => c.subject === 'Chemistry');
+  const chemistryDone = chemistryChapters.filter((c) => completedChapters[c.id]).length;
+  const chemistryPercent = chemistryChapters.length > 0 ? Math.round((chemistryDone / chemistryChapters.length) * 100) : 0;
 
-  const biologyTotal = NEET_CHAPTERS.Biology.length;
-  const biologyDone = NEET_CHAPTERS.Biology.filter((c) => completedChapters[c.name]).length;
+  const biologyChapters = currentGradeChapters.filter((c) => c.subject === 'Biology');
+  const biologyDone = biologyChapters.filter((c) => completedChapters[c.id]).length;
+  const biologyPercent = biologyChapters.length > 0 ? Math.round((biologyDone / biologyChapters.length) * 100) : 0;
 
-  const handleQuickAddTask = async (chap: ChapterInfo & { subject: SubjectType }) => {
+  const handleQuickAddTask = async (chap: DetailedChapter) => {
     const today = new Date().toISOString().split('T')[0];
     await addTask({
-      title: `Revise & solve 30 MCQs on ${chap.name}`,
+      title: `Solve 30 NCERT MCQs on ${chap.name}`,
       subject: chap.subject,
       chapter: chap.name,
       type: 'MCQs',
@@ -108,35 +135,36 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
     <div id="neet-syllabus-page" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* 1. Header Overview Card */}
       <Card id="syllabus-overview-card" variant="hero">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div
                 style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: 'var(--radius-sm)',
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
                   backgroundColor: 'var(--primary-container)',
                   color: 'var(--primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(4, 148, 244, 0.15)',
                 }}
               >
-                <BookIcon size={20} color="var(--primary)" />
+                <BookIcon size={22} color="var(--primary)" />
               </div>
               <div>
-                <h2 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                  NEET Syllabus Tracker
+                <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                  NEET UG Syllabus Tracker
                 </h2>
                 <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-                  Full NTA NEET UG Syllabus Checklist & High Yield Priority
+                  Official NTA Updated Syllabus with Subtopics & Key Concepts
                 </p>
               </div>
             </div>
 
-            <Badge variant="primary">
-              {completedCount} / {totalCount} Chapters ({progressPercent}%)
+            <Badge variant="primary" style={{ padding: '6px 12px', fontSize: '12px', fontWeight: 800 }}>
+              {completedCount} / {totalCount} Done ({progressPercent}%)
             </Badge>
           </div>
 
@@ -157,89 +185,191 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
                 height: '100%',
                 backgroundColor: 'var(--primary)',
                 borderRadius: 'var(--radius-pill)',
-                transition: 'width 0.3s ease',
+                transition: 'width 0.4s ease',
               }}
             />
           </div>
 
-          {/* Subject Pills Progress Summary */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '11px' }}>
+          {/* Subject Progress Summary Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '11.5px' }}>
             <div
               style={{
                 backgroundColor: 'var(--surface-variant)',
-                padding: '6px 8px',
-                borderRadius: 'var(--radius-xs)',
+                padding: '8px 10px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--border)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
               }}
             >
-              <span style={{ color: 'var(--subject-physics)', fontWeight: 700 }}>Physics</span>
-              <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                {physicsDone}/{physicsTotal} ({Math.round((physicsDone / physicsTotal) * 100)}%)
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--subject-physics)' }} />
+                <span style={{ color: 'var(--subject-physics)', fontWeight: 700 }}>Physics</span>
+              </div>
+              <span style={{ fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                {physicsDone}/{physicsChapters.length} ({physicsPercent}%)
               </span>
             </div>
 
             <div
               style={{
                 backgroundColor: 'var(--surface-variant)',
-                padding: '6px 8px',
-                borderRadius: 'var(--radius-xs)',
+                padding: '8px 10px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--border)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
               }}
             >
-              <span style={{ color: 'var(--subject-chemistry)', fontWeight: 700 }}>Chemistry</span>
-              <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                {chemistryDone}/{chemistryTotal} ({Math.round((chemistryDone / chemistryTotal) * 100)}%)
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--subject-chemistry)' }} />
+                <span style={{ color: 'var(--subject-chemistry)', fontWeight: 700 }}>Chemistry</span>
+              </div>
+              <span style={{ fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                {chemistryDone}/{chemistryChapters.length} ({chemistryPercent}%)
               </span>
             </div>
 
             <div
               style={{
                 backgroundColor: 'var(--surface-variant)',
-                padding: '6px 8px',
-                borderRadius: 'var(--radius-xs)',
+                padding: '8px 10px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--border)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
               }}
             >
-              <span style={{ color: 'var(--subject-biology)', fontWeight: 700 }}>Biology</span>
-              <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                {biologyDone}/{biologyTotal} ({Math.round((biologyDone / biologyTotal) * 100)}%)
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--subject-biology)' }} />
+                <span style={{ color: 'var(--subject-biology)', fontWeight: 700 }}>Biology</span>
+              </div>
+              <span style={{ fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                {biologyDone}/{biologyChapters.length} ({biologyPercent}%)
               </span>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* 2. Search and Filters Bar */}
+      {/* 2. SYLLABUS GRADE SELECTOR (11th, 12th, Dropper) */}
+      <div
+        id="syllabus-grade-segmented-control"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          backgroundColor: 'var(--surface-variant)',
+          borderRadius: 'var(--radius-pill)',
+          padding: '4px',
+          gap: '4px',
+          border: '1px solid var(--border)',
+        }}
+      >
+        <button
+          type="button"
+          id="syllabus-tab-11th"
+          onClick={() => handleSelectGrade('11th')}
+          style={{
+            padding: '9px 12px',
+            borderRadius: 'var(--radius-pill)',
+            border: 'none',
+            fontSize: '12px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            backgroundColor: selectedGrade === '11th' ? 'var(--primary)' : 'transparent',
+            color: selectedGrade === '11th' ? '#FFFFFF' : 'var(--text-secondary)',
+            boxShadow: selectedGrade === '11th' ? '0 2px 8px rgba(4, 148, 244, 0.3)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all var(--transition-fast)',
+          }}
+        >
+          <span>Class 11</span>
+          <span style={{ fontSize: '9.5px', opacity: selectedGrade === '11th' ? 0.9 : 0.7, fontWeight: 600 }}>
+            {CLASS_11_SYLLABUS.totalChapters} Chapters
+          </span>
+        </button>
+
+        <button
+          type="button"
+          id="syllabus-tab-12th"
+          onClick={() => handleSelectGrade('12th')}
+          style={{
+            padding: '9px 12px',
+            borderRadius: 'var(--radius-pill)',
+            border: 'none',
+            fontSize: '12px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            backgroundColor: selectedGrade === '12th' ? 'var(--primary)' : 'transparent',
+            color: selectedGrade === '12th' ? '#FFFFFF' : 'var(--text-secondary)',
+            boxShadow: selectedGrade === '12th' ? '0 2px 8px rgba(4, 148, 244, 0.3)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all var(--transition-fast)',
+          }}
+        >
+          <span>Class 12</span>
+          <span style={{ fontSize: '9.5px', opacity: selectedGrade === '12th' ? 0.9 : 0.7, fontWeight: 600 }}>
+            {CLASS_12_SYLLABUS.totalChapters} Chapters
+          </span>
+        </button>
+
+        <button
+          type="button"
+          id="syllabus-tab-dropper"
+          onClick={() => handleSelectGrade('dropper')}
+          style={{
+            padding: '9px 12px',
+            borderRadius: 'var(--radius-pill)',
+            border: 'none',
+            fontSize: '12px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            backgroundColor: selectedGrade === 'dropper' ? 'var(--primary)' : 'transparent',
+            color: selectedGrade === 'dropper' ? '#FFFFFF' : 'var(--text-secondary)',
+            boxShadow: selectedGrade === 'dropper' ? '0 2px 8px rgba(4, 148, 244, 0.3)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all var(--transition-fast)',
+          }}
+        >
+          <span>Dropper (11+12)</span>
+          <span style={{ fontSize: '9.5px', opacity: selectedGrade === 'dropper' ? 0.9 : 0.7, fontWeight: 600 }}>
+            {CLASS_11_SYLLABUS.totalChapters + CLASS_12_SYLLABUS.totalChapters} Chapters
+          </span>
+        </button>
+      </div>
+
+      {/* 3. Search and Subject Filters Bar */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {/* Search Input */}
-        <div style={{ position: 'relative' }}>
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search chapters (e.g. Thermodynamics, Genetics, Optics)..."
-            id="syllabus-search-input"
-          />
-        </div>
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search chapter, unit, topics (e.g. Optics, Genetics, Thermodynamics)..."
+          id="syllabus-search-input"
+        />
 
         {/* Filter Pills */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
             {(['All', 'Physics', 'Chemistry', 'Biology'] as const).map((subj) => (
               <button
                 key={subj}
                 type="button"
+                id={`filter-subject-${subj.toLowerCase()}`}
                 onClick={() => setSelectedSubject(subj)}
                 style={{
-                  padding: '5px 12px',
+                  padding: '6px 14px',
                   borderRadius: 'var(--radius-pill)',
                   fontSize: '11.5px',
                   fontWeight: 700,
@@ -247,6 +377,7 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
                   backgroundColor: selectedSubject === subj ? 'var(--primary)' : 'var(--surface)',
                   color: selectedSubject === subj ? '#FFFFFF' : 'var(--text-secondary)',
                   cursor: 'pointer',
+                  boxShadow: selectedSubject === subj ? '0 2px 6px rgba(4, 148, 244, 0.25)' : 'none',
                   transition: 'all var(--transition-fast)',
                 }}
               >
@@ -257,19 +388,21 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
 
           <button
             type="button"
+            id="filter-high-yield-btn"
             onClick={() => setHighYieldOnly((prev) => !prev)}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
-              padding: '5px 10px',
+              gap: '5px',
+              padding: '6px 12px',
               borderRadius: 'var(--radius-pill)',
               fontSize: '11px',
               fontWeight: 700,
-              border: highYieldOnly ? '1px solid var(--flame)' : '1px solid var(--border)',
+              border: highYieldOnly ? '1.5px solid var(--flame)' : '1px solid var(--border)',
               backgroundColor: highYieldOnly ? 'rgba(255, 109, 0, 0.12)' : 'var(--surface)',
               color: highYieldOnly ? 'var(--flame)' : 'var(--text-secondary)',
               cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
             }}
           >
             <FlameIcon size={13} color={highYieldOnly ? 'var(--flame)' : 'currentColor'} />
@@ -278,17 +411,17 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
         </div>
       </div>
 
-      {/* 3. Chapters List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* 4. CHAPTERS LIST */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-secondary)', padding: '0 4px' }}>
           <span>Showing {filteredChapters.length} chapter{filteredChapters.length === 1 ? '' : 's'}</span>
-          <span>{filteredChapters.filter((c) => completedChapters[c.name]).length} completed</span>
+          <span>{filteredChapters.filter((c) => completedChapters[c.id]).length} marked completed</span>
         </div>
 
         {filteredChapters.length === 0 ? (
           <div
             style={{
-              padding: '32px 16px',
+              padding: '36px 16px',
               textAlign: 'center',
               backgroundColor: 'var(--surface)',
               borderRadius: 'var(--radius-md)',
@@ -296,7 +429,7 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
               color: 'var(--text-secondary)',
             }}
           >
-            <p style={{ fontSize: '13px', margin: 0 }}>Koi chapter match nahi hua.</p>
+            <p style={{ fontSize: '13px', margin: 0, fontWeight: 600 }}>Koi chapter match nahi hua.</p>
             <button
               type="button"
               onClick={() => {
@@ -305,12 +438,12 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
                 setSearchQuery('');
               }}
               style={{
-                marginTop: '8px',
+                marginTop: '10px',
                 background: 'none',
                 border: 'none',
                 color: 'var(--primary)',
                 fontSize: '12px',
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: 'pointer',
               }}
             >
@@ -319,7 +452,8 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
           </div>
         ) : (
           filteredChapters.map((chap) => {
-            const isCompleted = Boolean(completedChapters[chap.name]);
+            const isCompleted = Boolean(completedChapters[chap.id]);
+            const isExpanded = expandedChapterId === chap.id;
             const subjColor =
               chap.subject === 'Physics'
                 ? 'var(--subject-physics)'
@@ -330,147 +464,244 @@ export const SyllabusPage: React.FC<SyllabusPageProps> = ({ onNavigateToTasks })
 
             return (
               <div
-                key={chap.name}
+                key={chap.id}
+                id={`syllabus-chapter-${chap.id}`}
                 style={{
                   backgroundColor: 'var(--surface)',
-                  borderRadius: 'var(--radius-sm)',
-                  border: isCompleted ? '1px solid var(--success)' : '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  border: isCompleted ? '1.5px solid var(--success)' : '1px solid var(--border)',
                   borderLeft: `4px solid ${subjColor}`,
-                  padding: '12px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px',
                   boxShadow: 'var(--shadow-sm)',
-                  opacity: isCompleted ? 0.88 : 1,
+                  opacity: isCompleted ? 0.92 : 1,
                   transition: 'all var(--transition-fast)',
+                  overflow: 'hidden',
                 }}
               >
-                {/* Left: Completion Checkbox + Title & Tags */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
-                  <button
-                    type="button"
-                    onClick={() => toggleChapterComplete(chap.name)}
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '6px',
-                      border: isCompleted ? 'none' : '2px solid var(--border)',
-                      backgroundColor: isCompleted ? 'var(--success)' : 'transparent',
-                      color: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      marginTop: '2px',
-                    }}
-                    title={isCompleted ? 'Mark as incomplete' : 'Mark as completed'}
-                  >
-                    {isCompleted && <CheckIcon size={14} color="#FFFFFF" />}
-                  </button>
+                {/* Main Chapter Summary Row */}
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  {/* Left: Completion Checkbox + Title & Badges */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
+                    <button
+                      type="button"
+                      id={`toggle-chap-${chap.id}`}
+                      onClick={() => toggleChapterComplete(chap.id)}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '7px',
+                        border: isCompleted ? 'none' : '2px solid var(--border)',
+                        backgroundColor: isCompleted ? 'var(--success)' : 'transparent',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        marginTop: '2px',
+                        transition: 'all var(--transition-fast)',
+                      }}
+                      title={isCompleted ? 'Mark as incomplete' : 'Mark as completed'}
+                    >
+                      {isCompleted && <CheckIcon size={14} color="#FFFFFF" />}
+                    </button>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          backgroundColor: subjColor,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <h4
-                        style={{
-                          fontSize: '13.5px',
-                          fontWeight: 700,
-                          margin: 0,
-                          color: isCompleted ? 'var(--text-secondary)' : 'var(--text-primary)',
-                          textDecoration: isCompleted ? 'line-through' : 'none',
-                        }}
-                      >
-                        {chap.name}
-                      </h4>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: 'var(--radius-xs)',
+                            backgroundColor: 'var(--surface-variant)',
+                            color: 'var(--text-tertiary)',
+                          }}
+                        >
+                          Ch {chap.chapterNumber}
+                        </span>
+                        <h4
+                          style={{
+                            fontSize: '13.5px',
+                            fontWeight: 700,
+                            margin: 0,
+                            color: isCompleted ? 'var(--text-secondary)' : 'var(--text-primary)',
+                            textDecoration: isCompleted ? 'line-through' : 'none',
+                          }}
+                        >
+                          {chap.name}
+                        </h4>
+                      </div>
+
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 500 }}>
+                        Unit {chap.unitNumber}: {chap.unitName}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: 'var(--radius-xs)',
+                            backgroundColor: 'var(--surface-variant)',
+                            color: subjColor,
+                          }}
+                        >
+                          {subjIcon} {chap.subject} • {chap.branch}
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: 'var(--radius-xs)',
+                            backgroundColor:
+                              chap.weightage === 'High'
+                                ? 'rgba(255, 109, 0, 0.12)'
+                                : chap.weightage === 'Medium'
+                                ? 'rgba(249, 171, 0, 0.12)'
+                                : 'var(--surface-variant)',
+                            color:
+                              chap.weightage === 'High'
+                                ? 'var(--flame)'
+                                : chap.weightage === 'Medium'
+                                ? '#B06000'
+                                : 'var(--text-tertiary)',
+                          }}
+                        >
+                          {chap.weightage} Weightage
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            padding: '1px 6px',
+                            borderRadius: 'var(--radius-xs)',
+                            backgroundColor: 'var(--surface-variant)',
+                            color: 'var(--text-secondary)',
+                          }}
+                        >
+                          Class {chap.classGrade}
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            padding: '1px 6px',
+                            borderRadius: 'var(--radius-xs)',
+                            backgroundColor: 'var(--surface-variant)',
+                            color: 'var(--primary)',
+                          }}
+                        >
+                          {chap.expectedQuestions}
+                        </span>
+                      </div>
                     </div>
+                  </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          padding: '1px 6px',
-                          borderRadius: 'var(--radius-xs)',
-                          backgroundColor: 'var(--surface-variant)',
-                          color: subjColor,
-                        }}
-                      >
-                        {subjIcon} {chap.subject}
-                      </span>
+                  {/* Right Actions: Add Task + Toggle Expand Topics */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      id={`add-task-chap-${chap.id}`}
+                      onClick={() => handleQuickAddTask(chap)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '6px 9px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        borderRadius: 'var(--radius-xs)',
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'var(--surface-variant)',
+                        color: 'var(--primary)',
+                        cursor: 'pointer',
+                      }}
+                      title="Add daily study task for this chapter"
+                    >
+                      <PlusIcon size={12} color="var(--primary)" />
+                      Task
+                    </button>
 
-                      <span
-                        style={{
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          padding: '1px 6px',
-                          borderRadius: 'var(--radius-xs)',
-                          backgroundColor:
-                            chap.weightage === 'High'
-                              ? 'rgba(255, 109, 0, 0.12)'
-                              : chap.weightage === 'Medium'
-                              ? 'rgba(249, 171, 0, 0.12)'
-                              : 'var(--surface-variant)',
-                          color:
-                            chap.weightage === 'High'
-                              ? 'var(--flame)'
-                              : chap.weightage === 'Medium'
-                              ? '#B06000'
-                              : 'var(--text-tertiary)',
-                        }}
-                      >
-                        {chap.weightage} Weightage
-                      </span>
-
-                      <span
-                        style={{
-                          fontSize: '10px',
-                          fontWeight: 600,
-                          padding: '1px 6px',
-                          borderRadius: 'var(--radius-xs)',
-                          backgroundColor: 'var(--surface-variant)',
-                          color: 'var(--text-secondary)',
-                        }}
-                      >
-                        Class {chap.classGrade}
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      id={`expand-chap-${chap.id}`}
+                      onClick={() => setExpandedChapterId(isExpanded ? null : chap.id)}
+                      style={{
+                        padding: '6px 8px',
+                        borderRadius: 'var(--radius-xs)',
+                        border: '1px solid var(--border)',
+                        backgroundColor: isExpanded ? 'var(--primary-container)' : 'var(--surface-variant)',
+                        color: isExpanded ? 'var(--primary)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      title={isExpanded ? 'Hide topics' : 'Show NTA syllabus topics'}
+                    >
+                      {isExpanded ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
+                    </button>
                   </div>
                 </div>
 
-                {/* Right: Quick Add Task button */}
-                <div style={{ flexShrink: 0 }}>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickAddTask(chap)}
+                {/* Collapsible Detailed NTA Syllabus Topics & Key Concepts */}
+                {isExpanded && (
+                  <div
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '5px 8px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      borderRadius: 'var(--radius-xs)',
-                      border: '1px solid var(--border)',
+                      borderTop: '1px solid var(--border-subtle)',
                       backgroundColor: 'var(--surface-variant)',
-                      color: 'var(--primary)',
-                      cursor: 'pointer',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
                     }}
-                    title="Add daily task for this chapter"
                   >
-                    <PlusIcon size={12} color="var(--primary)" />
-                    Task
-                  </button>
-                </div>
+                    <div>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        NTA Syllabus Topics:
+                      </span>
+                      <ul style={{ margin: '6px 0 0 0', paddingLeft: '18px', fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        {chap.topics.map((t, idx) => (
+                          <li key={idx} style={{ marginBottom: '3px' }}>
+                            {t}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {chap.keyConcepts && (
+                      <div
+                        style={{
+                          backgroundColor: 'var(--surface)',
+                          borderRadius: 'var(--radius-xs)',
+                          padding: '8px 10px',
+                          border: '1px solid var(--border)',
+                          fontSize: '11.5px',
+                        }}
+                      >
+                        <span style={{ fontWeight: 800, color: 'var(--primary)', display: 'block', marginBottom: '2px' }}>
+                          ⚡ High-Yield Focus / Key Concepts:
+                        </span>
+                        <span style={{ color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                          {chap.keyConcepts}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })

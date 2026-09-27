@@ -180,6 +180,6 @@ export function getWeeklyLeaderboard(
   return {
     entries,
     currentUserEntry: userRanked,
-    totalParticipants: 1420 + entries.length,
+    totalParticipants: entries.length,
   };
 }

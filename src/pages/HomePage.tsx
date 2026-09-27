@@ -80,7 +80,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
 
   const handleSelectSubject = (subj: SubjectType) => {
     setSubject(subj);
-    openTimer({ subject: subj });
+    onNavigateTab('timer');
   };
 
   return (
@@ -99,7 +99,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
         streakStats={streakStats}
         shieldActivating={shieldActivating}
         onUseShield={handleUseShield}
-        onOpenTimer={() => openTimer()}
+        onOpenTimer={() => onNavigateTab('timer')}
         onOpenMilestones={() => setShowMilestonesModal(true)}
       />
 
@@ -123,7 +123,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
         isRunning={isRunning}
         timeFormatted={timeFormatted}
         activeSubject={activeSubject}
-        onOpenTimer={openTimer}
+        onOpenTimer={(cfg) => {
+          if (cfg?.subject) setSubject(cfg.subject);
+          onNavigateTab('timer');
+        }}
       />
 
       {/* 7. Active Study Goals Preview */}
@@ -131,7 +134,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateTab, stats }) => {
 
       {/* 8. Quick Action Buttons */}
       <HomeQuickActions
-        onOpenTimer={() => openTimer()}
+        onOpenTimer={() => onNavigateTab('timer')}
         onNavigateTab={onNavigateTab}
       />
 

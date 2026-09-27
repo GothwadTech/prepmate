@@ -6,6 +6,7 @@ import {
   GoalsIcon,
   PartnersIcon,
   BookIcon,
+  ClockIcon,
 } from '../icons/SvgIcons';
 import { useData } from '../../context/DataContext';
 
@@ -28,28 +29,33 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
     {
       id: 'home',
       label: 'Home',
-      icon: (active) => <HomeIcon size={22} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <HomeIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
     {
       id: 'tasks',
       label: 'Tasks',
-      icon: (active) => <TasksIcon size={22} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <TasksIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
+    },
+    {
+      id: 'timer',
+      label: 'Timer',
+      icon: (active) => <ClockIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
     {
       id: 'goals',
       label: 'Goals',
-      icon: (active) => <GoalsIcon size={22} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <GoalsIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
     {
       id: 'partners',
       label: 'Partners',
-      icon: (active) => <PartnersIcon size={22} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <PartnersIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
       badge: pendingPartnerRequestsCount,
     },
     {
       id: 'syllabus',
       label: 'Syllabus',
-      icon: (active) => <BookIcon size={22} color={active ? 'var(--primary)' : 'currentColor'} />,
+      icon: (active) => <BookIcon size={24} color={active ? 'var(--primary)' : 'currentColor'} />,
     },
   ];
 
@@ -78,14 +84,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
                   style={{
                     position: 'absolute',
                     top: '-2px',
-                    right: '6px',
-                    minWidth: '16px',
-                    height: '16px',
-                    padding: '0 4px',
+                    right: '2px',
+                    minWidth: '15px',
+                    height: '15px',
+                    padding: '0 3px',
                     borderRadius: 'var(--radius-pill)',
                     backgroundColor: 'var(--danger)',
                     color: '#ffffff',
-                    fontSize: '10px',
+                    fontSize: '9px',
                     fontWeight: 800,
                     display: 'flex',
                     alignItems: 'center',

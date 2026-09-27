@@ -54,22 +54,11 @@ class SyncManagerClass {
       if (saved) {
         this.conflictLogs = JSON.parse(saved);
       } else {
-        // Initial sample conflict log demonstrating LWW/smart merge
-        this.conflictLogs = [
-          {
-            id: 'conf-1',
-            collection: 'tasks',
-            docId: 'task-initial-1',
-            docTitle: 'Physics: Current Electricity PYQs',
-            resolvedAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-            resolutionStrategy: 'smart_merge',
-            details: 'Offline completion status (completed: true) merged with Cloud revision without losing notes.',
-          },
-        ];
+        this.conflictLogs = [];
         this.saveConflictLogs();
       }
     } catch {
-      //
+      this.conflictLogs = [];
     }
   }
 

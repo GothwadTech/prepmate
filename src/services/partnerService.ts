@@ -32,135 +32,8 @@ import {
 const STORAGE_PARTNER_REQUESTS_KEY = 'prepmate_partner_requests_cache';
 const STORAGE_PARTNERSHIP_KEY = 'prepmate_active_partnership_cache';
 
-// Seed aspirants for search discovery and demo
-export const SEED_NEET_ASPIRANTS: PartnerProfile[] = [
-  {
-    id: 'demo-p-101',
-    name: 'Aman Sharma',
-    username: 'amansharma_aiims',
-    targetYear: '2026',
-    targetScore: 690,
-    todayStudyHours: 5.5,
-    todayTasksCompleted: 4,
-    streakDays: 6,
-    avatarBg: '#0F9D58',
-    bio: 'AIIMS New Delhi Dream | Daily 6+ hrs physics & bio practice',
-    isStudyingNow: true,
-    currentSubject: 'Physics',
-    lastActive: 'Studying Now 🟢',
-    weeklyHours: 36.5,
-    subjectBreakdown: {
-      physicsHours: 15.0,
-      chemistryHours: 9.5,
-      biologyHours: 12.0,
-    },
-  },
-  {
-    id: 'demo-p-102',
-    name: 'Priya Verma',
-    username: 'priya_neet26',
-    targetYear: '2026',
-    targetScore: 675,
-    todayStudyHours: 4.8,
-    todayTasksCompleted: 3,
-    streakDays: 9,
-    avatarBg: '#9C27B0',
-    bio: 'Biology NCERT 360/360 Target | Revision enthusiast',
-    isStudyingNow: false,
-    currentSubject: 'Biology',
-    lastActive: 'Active 25m ago',
-    weeklyHours: 32.0,
-    subjectBreakdown: {
-      physicsHours: 8.0,
-      chemistryHours: 10.0,
-      biologyHours: 14.0,
-    },
-  },
-  {
-    id: 'demo-p-103',
-    name: 'Rohit Kumar',
-    username: 'rohit_physics',
-    targetYear: '2026',
-    targetScore: 660,
-    todayStudyHours: 3.5,
-    todayTasksCompleted: 2,
-    streakDays: 4,
-    avatarBg: '#0494F4',
-    bio: 'Mastering mechanics & current electricity numericals',
-    isStudyingNow: true,
-    currentSubject: 'Physics',
-    lastActive: 'Studying Now 🟢',
-    weeklyHours: 24.5,
-    subjectBreakdown: {
-      physicsHours: 14.5,
-      chemistryHours: 5.0,
-      biologyHours: 5.0,
-    },
-  },
-  {
-    id: 'demo-p-104',
-    name: 'Ananya Deshmukh',
-    username: 'ananya_chem',
-    targetYear: '2026',
-    targetScore: 685,
-    todayStudyHours: 6.0,
-    todayTasksCompleted: 5,
-    streakDays: 14,
-    avatarBg: '#E91E63',
-    bio: 'Organic chemistry reaction mechanisms & mock tests',
-    isStudyingNow: false,
-    currentSubject: 'Chemistry',
-    lastActive: 'Active 1h ago',
-    weeklyHours: 41.0,
-    subjectBreakdown: {
-      physicsHours: 10.0,
-      chemistryHours: 18.0,
-      biologyHours: 13.0,
-    },
-  },
-  {
-    id: 'demo-p-105',
-    name: 'Arjun Patel',
-    username: 'arjun_medic',
-    targetYear: '2025',
-    targetScore: 700,
-    todayStudyHours: 7.2,
-    todayTasksCompleted: 6,
-    streakDays: 21,
-    avatarBg: '#FF5722',
-    bio: 'Dropper aiming top 500 AIR in NEET | Hard grind',
-    isStudyingNow: true,
-    currentSubject: 'Revision',
-    lastActive: 'Studying Now 🟢',
-    weeklyHours: 48.0,
-    subjectBreakdown: {
-      physicsHours: 16.0,
-      chemistryHours: 15.0,
-      biologyHours: 17.0,
-    },
-  },
-  {
-    id: 'demo-p-106',
-    name: 'Dr. Sneha Kulkarni',
-    username: 'dr_sneha26',
-    targetYear: '2026',
-    targetScore: 670,
-    todayStudyHours: 4.2,
-    todayTasksCompleted: 3,
-    streakDays: 8,
-    avatarBg: '#009688',
-    bio: 'Future Doctor | Consistency beats intensity everyday',
-    isStudyingNow: false,
-    currentSubject: 'Biology',
-    lastActive: 'Active 3h ago',
-    weeklyHours: 29.5,
-    subjectBreakdown: {
-      physicsHours: 7.5,
-      chemistryHours: 8.0,
-      biologyHours: 14.0,
-    },
-  },
-];
+// Seed aspirants for search discovery (Production Mode: Clean State)
+export const SEED_NEET_ASPIRANTS: PartnerProfile[] = [];
 
 export const partnerService = {
   /**
@@ -170,25 +43,7 @@ export const partnerService = {
     try {
       const raw = localStorage.getItem(STORAGE_PARTNER_REQUESTS_KEY);
       if (!raw) {
-        // Initialize with default pending request from Aman Sharma
-        const defaultRequests: PartnerRequest[] = [
-          {
-            id: 'req-aman-101',
-            senderId: 'demo-p-101',
-            senderName: 'Aman Sharma',
-            senderUsername: 'amansharma_aiims',
-            senderScore: 690,
-            senderTargetYear: '2026',
-            senderAvatarBg: '#0F9D58',
-            receiverId: 'current-user',
-            receiverUsername: 'you',
-            status: 'pending',
-            message: 'Bhai sath me daily Physics numericals aur Bio revision karenge! Target 680+ 💪',
-            createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-          },
-        ];
-        localStorage.setItem(STORAGE_PARTNER_REQUESTS_KEY, JSON.stringify(defaultRequests));
-        return defaultRequests;
+        return [];
       }
       return JSON.parse(raw);
     } catch {
@@ -508,19 +363,19 @@ export const partnerService = {
       username: req.senderUsername,
       targetYear: req.senderTargetYear || '2026',
       targetScore: req.senderScore || 680,
-      todayStudyHours: seed?.todayStudyHours ?? 5.0,
-      todayTasksCompleted: seed?.todayTasksCompleted ?? 4,
-      streakDays: seed?.streakDays ?? 7,
-      avatarBg: req.senderAvatarBg || seed?.avatarBg || '#0F9D58',
-      bio: seed?.bio || 'AIIMS New Delhi Dream | Consistent daily practice',
-      isStudyingNow: seed?.isStudyingNow ?? true,
-      currentSubject: seed?.currentSubject ?? 'Physics',
-      lastActive: seed?.lastActive ?? 'Studying Now 🟢',
-      weeklyHours: seed?.weeklyHours ?? 36.5,
-      subjectBreakdown: seed?.subjectBreakdown ?? {
-        physicsHours: 15.0,
-        chemistryHours: 9.5,
-        biologyHours: 12.0,
+      todayStudyHours: 0,
+      todayTasksCompleted: 0,
+      streakDays: 0,
+      avatarBg: req.senderAvatarBg || '#0F9D58',
+      bio: 'NEET Aspirant | Daily consistency',
+      isStudyingNow: false,
+      currentSubject: 'Physics',
+      lastActive: 'Joined partnership',
+      weeklyHours: 0,
+      subjectBreakdown: {
+        physicsHours: 0,
+        chemistryHours: 0,
+        biologyHours: 0,
       },
     };
 
@@ -594,26 +449,8 @@ export const partnerService = {
       }
     }
 
-    // Also provide a realistic study simulation interval for demo/local testing
-    const interval = setInterval(() => {
-      const current = this.getLocalPartnership();
-      if (current && current.status === 'active') {
-        const updated: ActivePartnership = {
-          ...current,
-          lastSyncedAt: new Date().toISOString(),
-          partner: {
-            ...current.partner,
-            lastActive: current.partner.isStudyingNow ? 'Studying Now 🟢' : 'Active 5m ago',
-          },
-        };
-        this.saveLocalPartnership(updated);
-        onUpdate(updated);
-      }
-    }, 45000);
-
     return () => {
       if (unsubscribeFirestore) unsubscribeFirestore();
-      clearInterval(interval);
     };
   },
 

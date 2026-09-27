@@ -3,7 +3,11 @@ import { useTimer } from '../../context/TimerContext';
 import { PlayIcon, PauseIcon, ClockIcon } from '../icons/SvgIcons';
 import { SubjectType } from '../../types';
 
-export const FloatingTimerBar: React.FC = () => {
+interface FloatingTimerBarProps {
+  onNavigateToTimer?: () => void;
+}
+
+export const FloatingTimerBar: React.FC<FloatingTimerBarProps> = ({ onNavigateToTimer }) => {
   const {
     isRunning,
     isPaused,
@@ -36,11 +40,19 @@ export const FloatingTimerBar: React.FC = () => {
 
   const subjectColor = getSubjectColor(subject);
 
+  const handleClick = () => {
+    if (onNavigateToTimer) {
+      onNavigateToTimer();
+    } else {
+      openTimer();
+    }
+  };
+
   return (
     <div
       id="floating-mini-timer"
       className="floating-mini-timer"
-      onClick={() => openTimer()}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
       aria-label="Open full study timer"

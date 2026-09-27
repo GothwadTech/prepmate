@@ -1,63 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import {
-  PartnersIcon,
+  FlameIcon,
+  TrophyIcon,
   SearchIcon,
   InboxIcon,
-  FlameIcon,
-  ClockIcon,
-  CheckIcon,
-  AwardIcon,
   TargetIcon,
   SparklesIcon,
-  UserCheckIcon,
-  UserXIcon,
-  TrophyIcon,
+  PartnersIcon,
+  ClockIcon,
+  CheckIcon,
 } from '../components/icons/SvgIcons';
-import { PartnerProfile, UserStats } from '../types';
-import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { useBackHandler } from '../context/NavigationContext';
-import { PartnerSearchCard } from '../components/partner/PartnerSearchCard';
-import { PartnerRequestsList } from '../components/partner/PartnerRequestsList';
-import { PartnerProfileModal } from '../components/partner/PartnerProfileModal';
+import { useData } from '../context/DataContext';
+import { PartnerProfile, ActivePartnership } from '../types';
 import { VsComparisonBoard } from '../components/partner/VsComparisonBoard';
 import { LeaderboardView } from '../components/partner/LeaderboardView';
 import { PartnerChallengesView } from '../components/partner/PartnerChallengesView';
+import { PartnerSearchCard } from '../components/partner/PartnerSearchCard';
+import { PartnerRequestsList } from '../components/partner/PartnerRequestsList';
+import { PartnerProfileModal } from '../components/partner/PartnerProfileModal';
+import { useBackHandler } from '../context/NavigationContext';
 
 interface PartnersPageProps {
-  stats: UserStats;
+  stats?: any;
 }
 
-type PartnerTabMode = 'vs' | 'leaderboard' | 'challenges' | 'search' | 'requests';
-
-export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
+export const PartnersPage: React.FC<PartnersPageProps> = () => {
+  const { user, showToast } = useAuth();
   const {
-    activePartner,
-    activePartnership,
-    receivedRequests,
-    sentRequests,
-    endCurrentPartnership,
+    stats,
     dailyLogs,
+    activePartnership,
+    activePartner,
+    receivedRequests,
+    endCurrentPartnership,
     sendPartnerCheer,
   } = useData();
 
-  const { user, showToast } = useAuth();
-
-  const [activeMode, setActiveMode] = useState<PartnerTabMode>(() => {
-    // If user has received requests and no active partner, default to requests to let them see it
-    if (receivedRequests.length > 0 && !activePartner) {
-      return 'requests';
-    }
-    return 'vs';
-  });
-
-  const [showEndConfirm, setShowEndConfirm] = useState<boolean>(false);
+  const [activeMode, setActiveMode] = useState<
+    'vs' | 'leaderboard' | 'challenges' | 'search' | 'requests'
+  >('vs');
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [showEndConfirm, setShowEndConfirm] = useState<boolean>(false);
 
-  // Close modals on Android / browser back button
+  // If user has incoming requests and no partner, default to requests or search
+  useEffect(() => {
+    if (!activePartner && receivedRequests.length > 0 && activeMode === 'vs') {
+      // Keep VS or let user choose
+    }
+  }, [receivedRequests.length, activePartner]);
+
+  // Back handler for end partnership confirmation modal
   useBackHandler(
     showEndConfirm,
     () => {
@@ -65,9 +61,10 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
       return true;
     },
     110,
-    'partner-end-confirm'
+    'partner-end-confirm-modal'
   );
 
+  // Back handler for partner profile modal
   useBackHandler(
     showProfileModal,
     () => {
@@ -77,29 +74,6 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
     100,
     'partner-profile-modal'
   );
-
-  // Fallback demo partner for VS preview if none is connected yet
-  const displayPartner: PartnerProfile = activePartner || {
-    id: 'demo-sample',
-    name: 'Aman Sharma',
-    username: 'amansharma_aiims',
-    targetYear: '2026',
-    targetScore: 690,
-    todayStudyHours: 5.5,
-    todayTasksCompleted: 4,
-    streakDays: 6,
-    avatarBg: '#0F9D58',
-    bio: 'AIIMS New Delhi Dream | Daily 6+ hrs physics & bio practice',
-    isStudyingNow: true,
-    currentSubject: 'Physics',
-    lastActive: 'Studying Now 🟢',
-    weeklyHours: 36.5,
-    subjectBreakdown: {
-      physicsHours: 15.0,
-      chemistryHours: 9.5,
-      biologyHours: 12.0,
-    },
-  };
 
   const isActuallyConnected = Boolean(activePartnership && activePartner);
 
@@ -111,7 +85,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
 
   return (
     <div id="partners-competition-page" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* X-Factor Banner */}
+      {/* Banner */}
       <Card variant="hero" id="partner-xfactor-banner">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -121,18 +95,18 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
                 NEET Study Partner & Live Sync
               </span>
             </div>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, marginTop: '2px' }}>
-              Study Partner & Real-Time Sync
+            <h2 style={{ fontSize: '18px', fontWeight: 800, marginTop: '2px', color: 'var(--text-primary)' }}>
+              Study Partner & Accountability
             </h2>
           </div>
           <Badge variant={isActuallyConnected ? 'success' : 'primary'}>
-            {isActuallyConnected ? 'Live Sync ⚡' : '🩺 Live Duel'}
+            {isActuallyConnected ? 'Live Sync ⚡' : '🩺 Study Partner'}
           </Badge>
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
           {isActuallyConnected
-            ? `Aap aur ${displayPartner.name} live study competition me hain! Sath me daily targets complete karo aur real-time cheers bhejo.`
-            : 'Apne dost ko partner banayein, daily padhai ke ghante aur tasks compare karein aur ek dusre ko motivate karein!'}
+            ? `Aap aur ${activePartner?.name} live study competition me hain! Sath me daily targets complete karein aur ek dusre ko motivate karein.`
+            : 'Apne fellow NEET aspirant ko connect karein, daily padhai ke ghante aur tasks compare karein aur consistency maintain karein!'}
         </p>
       </Card>
 
@@ -146,6 +120,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
           padding: '4px',
           gap: '3px',
           overflowX: 'auto',
+          border: '1px solid var(--border)',
         }}
       >
         <button
@@ -301,7 +276,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
       </div>
 
       {/* Active Partner Connected Info Banner (if connected) */}
-      {isActuallyConnected && (
+      {isActuallyConnected && activePartner && (
         <div
           id="active-partner-status-strip"
           style={{
@@ -325,7 +300,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
                 width: '42px',
                 height: '42px',
                 borderRadius: '50%',
-                backgroundColor: displayPartner.avatarBg || '#0F9D58',
+                backgroundColor: activePartner.avatarBg || '#0F9D58',
                 color: '#FFF',
                 display: 'flex',
                 alignItems: 'center',
@@ -335,8 +310,8 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
                 position: 'relative',
               }}
             >
-              {displayPartner.name.slice(0, 2).toUpperCase()}
-              {displayPartner.isStudyingNow && (
+              {activePartner.name.slice(0, 2).toUpperCase()}
+              {activePartner.isStudyingNow && (
                 <span
                   style={{
                     position: 'absolute',
@@ -354,14 +329,14 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                  {displayPartner.name}
+                  {activePartner.name}
                 </h4>
                 <Badge variant="success">
-                  {displayPartner.isStudyingNow ? 'Studying Now 🟢' : 'Active Buddy'}
+                  {activePartner.isStudyingNow ? 'Studying Now 🟢' : 'Active Buddy'}
                 </Badge>
               </div>
               <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
-                @{displayPartner.username} • Target {displayPartner.targetScore}+
+                @{activePartner.username} • Target {activePartner.targetScore}+
               </span>
             </div>
           </div>
@@ -395,7 +370,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
       )}
 
       {/* Disconnect Confirmation Modal */}
-      {showEndConfirm && (
+      {showEndConfirm && activePartner && (
         <div
           style={{
             position: 'fixed',
@@ -422,7 +397,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
             }}
           >
             <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>
-              End Partnership with {displayPartner.name}?
+              End Partnership with {activePartner.name}?
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
               Kiya aap partnership disconnect karna chahte hain? Aap baad me naya partner search kar sakte hain.
@@ -440,9 +415,9 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
       )}
 
       {/* Partner Profile Modal */}
-      {showProfileModal && (
+      {showProfileModal && activePartner && (
         <PartnerProfileModal
-          partner={displayPartner}
+          partner={activePartner}
           partnership={activePartnership}
           onClose={() => setShowProfileModal(false)}
           onEndPartnership={handleDisconnect}
@@ -452,56 +427,126 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
       {/* TAB 1: VS COMPARISON BOARD */}
       {activeMode === 'vs' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {!isActuallyConnected && (
+          {isActuallyConnected && activePartner ? (
+            <VsComparisonBoard
+              stats={stats}
+              dailyLogs={dailyLogs}
+              partner={activePartner}
+              isConnected={true}
+              onOpenProfile={() => setShowProfileModal(true)}
+              onQuickCheer={async (msg) => {
+                try {
+                  await sendPartnerCheer(msg);
+                  showToast('Motivational cheer sent to partner! 🔥', 'success');
+                } catch (e) {
+                  showToast('Cheer sent!', 'info');
+                }
+              }}
+              showToast={showToast}
+            />
+          ) : (
+            /* Clean Production Empty State for VS Duel */
             <div
+              id="vs-board-empty-state"
               style={{
-                backgroundColor: 'var(--surface-variant)',
-                borderRadius: 'var(--radius-md)',
-                padding: '12px 14px',
+                backgroundColor: 'var(--surface)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)',
+                padding: '32px 20px',
+                textAlign: 'center',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
+                gap: '16px',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
-              <div>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary)', display: 'block' }}>
-                  Previewing VS Board (Demo Partner)
-                </span>
-                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-                  Apne dost ko connect karne ke liye Find Partner ya Requests check karein.
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--primary-container)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--primary)',
+                }}
+              >
+                <PartnersIcon size={28} color="var(--primary)" />
+              </div>
+
+              <div style={{ maxWidth: '380px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>
+                  No Study Partner Connected Yet
+                </h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  Apne dost ya fellow NEET aspirant ko connect karein. Aap dono ke daily study hours, completed questions aur consistency streak real-time me compare honge!
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <Button variant="primary" size="sm" onClick={() => setActiveMode('search')}>
-                  Find Partner 🔍
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <Button variant="primary" onClick={() => setActiveMode('search')}>
+                  <SearchIcon size={14} /> Find Study Partner
                 </Button>
                 {receivedRequests.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={() => setActiveMode('requests')}>
-                    Requests ({receivedRequests.length}) 📥
+                  <Button variant="outline" onClick={() => setActiveMode('requests')}>
+                    <InboxIcon size={14} /> View Requests ({receivedRequests.length})
                   </Button>
                 )}
               </div>
+
+              {/* Value Proposition Cards */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  gap: '10px',
+                  width: '100%',
+                  marginTop: '8px',
+                  textAlign: 'left',
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: 'var(--surface-variant)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '12px',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    <FlameIcon size={16} color="var(--flame)" />
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Live Study Duel
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                    Track who logged more study minutes and completed more NCERT questions today.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: 'var(--surface-variant)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '12px',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    <TargetIcon size={16} color="var(--danger)" />
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Study Challenges
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                    Create custom 1-day or 3-day target challenges for mock tests and numerical drills.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
-
-          {/* Dedicated Rich VS Comparison Board */}
-          <VsComparisonBoard
-            stats={stats}
-            dailyLogs={dailyLogs}
-            partner={displayPartner}
-            isConnected={isActuallyConnected}
-            onOpenProfile={() => setShowProfileModal(true)}
-            onQuickCheer={async (msg) => {
-              try {
-                await sendPartnerCheer(msg);
-                showToast('Motivational cheer sent to partner! 🔥', 'success');
-              } catch (e) {
-                showToast('Cheer sent!', 'info');
-              }
-            }}
-            showToast={showToast}
-          />
         </div>
       )}
 
@@ -510,7 +555,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
         <LeaderboardView
           stats={stats}
           dailyLogs={dailyLogs}
-          partner={isActuallyConnected ? activePartner : displayPartner}
+          partner={activePartner}
           currentUser={{
             uid: user?.uid || 'you-local',
             displayName: user?.displayName || 'You (Aspirant)',
@@ -524,11 +569,54 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({ stats }) => {
 
       {/* TAB 3: PARTNER CHALLENGES */}
       {activeMode === 'challenges' && (
-        <PartnerChallengesView
-          partner={displayPartner}
-          stats={stats}
-          showToast={showToast}
-        />
+        isActuallyConnected && activePartner ? (
+          <PartnerChallengesView
+            partner={activePartner}
+            stats={stats}
+            showToast={showToast}
+          />
+        ) : (
+          <div
+            id="challenges-empty-state"
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border)',
+              padding: '32px 20px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '14px',
+            }}
+          >
+            <div
+              style={{
+                width: '52px',
+                height: '52px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(234, 67, 53, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--danger)',
+              }}
+            >
+              <TargetIcon size={26} color="var(--danger)" />
+            </div>
+            <div style={{ maxWidth: '360px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>
+                Connect a Partner to Unlock Challenges
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Study challenges allow you and your study partner to compete on mock test scores, 6-hour study marathons, and daily MCQ sprints!
+              </p>
+            </div>
+            <Button variant="primary" onClick={() => setActiveMode('search')}>
+              Find Partner 🔍
+            </Button>
+          </div>
+        )
       )}
 
       {/* TAB 4: FIND PARTNER (SEARCH) */}

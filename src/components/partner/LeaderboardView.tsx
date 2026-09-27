@@ -271,7 +271,8 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
         id="leaderboard-top-three-podium"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: topThree.length === 1 ? 'minmax(180px, 260px)' : `repeat(${topThree.length}, 1fr)`,
+          justifyContent: 'center',
           gap: '8px',
           alignItems: 'flex-end',
         }}
